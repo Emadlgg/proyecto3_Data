@@ -1,0 +1,85 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry,booktabs,array,hyperref,tikz}
+\geometry{margin=2.3cm}
+\usetikzlibrary{babel}
+\hypersetup{hidelinks}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\begin{document}
+\begin{center}
+{\small Universidad del Valle de Guatemala\\Facultad de Ingeniería --- Data Science}\\[7pt]
+{\Large\bfseries Laboratorio 10: Visualización interactiva}\\[4pt]
+{\normalsize Informe de diseño y entrega final}\\[8pt]
+Osman de León \quad --- \quad 25 de octubre de 2026
+\end{center}
+
+\section{Objetivo y alcance}
+Se desarrolló una aplicación de visualización interactiva con Python, Streamlit y Plotly para explorar la evolución de movimientos migratorios registrados en Guatemala, identificar patrones por vía de ingreso y consultar los resultados de modelos predictivos realizados en laboratorios anteriores. La aplicación está pensada para usuarios que necesitan interpretar tendencias sin profundizar en los procedimientos estadísticos.
+
+El proyecto general del curso tiene asignado el destino Tikal y Flores (Petén), pero los archivos disponibles para esta entrega contienen series \emph{nacionales}. Por ello, el tablero se presenta expresamente como un módulo de contexto nacional y no como una medición específica del destino. La integración de boletos de Tikal, aeropuerto Mundo Maya y telefonía depende de recibir esas fuentes.
+
+\section{Preguntas de gestión}
+\begin{enumerate}
+\item ¿Cómo han cambiado los movimientos registrados a lo largo del tiempo?
+\item ¿Qué diferencias aparecen entre las vías aérea, terrestre y marítima?
+\item ¿Qué meses suelen mostrar mayor actividad respecto al promedio?
+\item ¿Cómo varía un mes frente al mismo mes del año anterior?
+\item ¿Qué modelos anteriores presentan menor error de predicción?
+\item ¿Qué tan cerca están las estimaciones de los valores observados?
+\end{enumerate}
+
+\section{Diseño, navegación y herramientas}
+Se optó por una interfaz clara y sobria, con texto legible, títulos directos, mensajes cuando faltan datos y controles concentrados en una barra lateral. Los colores de las series se mantienen consistentes dentro de cada gráfica y se emplean para distinguir categorías o resultados, no como decoración. Para los resultados predictivos se diferencia explícitamente lo observado de lo estimado. La tipografía predeterminada de Streamlit permite lectura adecuada en distintas pantallas.
+
+La navegación tiene dos secciones: \textbf{Exploración}, que contiene las gráficas 1--6, y \textbf{Predicciones y modelos}, que contiene las gráficas 7--8. En la barra lateral se seleccionan año, mes y vías; la métrica de evaluación se selecciona en la segunda sección. Se eligió \textbf{Streamlit} por su integración directa con Pandas y Python, y \textbf{Plotly} por el zoom, los detalles al pasar el cursor y los eventos de selección. Esto permite reutilizar las salidas de los laboratorios anteriores sin entrenar nuevos modelos.
+
+\begin{center}
+\begin{tikzpicture}[every node/.style={draw,rounded corners,align=center,minimum height=0.9cm,font=\small}]
+\node (a) at (0,0) {Menú lateral\\Año / mes / vías};
+\node (b) at (5,0) {Exploración\\Gráficas 1--6};
+\node (c) at (5,-1.6) {Predicciones\\Gráficas 7--8};
+\draw[->] (a) -- (b);\draw[->] (a.south east) -- (c.west);
+\end{tikzpicture}
+\end{center}
+
+\section{Visualizaciones implementadas}
+\begin{center}\small
+\begin{tabular}{@{}p{0.06\linewidth}p{0.30\linewidth}p{0.54\linewidth}@{}}\toprule
+N. & Gráfica & Razón de la elección \\ \midrule
+1 & Barras por año & Compara totales anuales y permite elegir un año.\\
+2 & Barras por mes & Desglosa el año seleccionado y permite elegir un mes.\\
+3 & Gráfico de dona por vía & Presenta la composición del mes elegido.\\
+4 & Líneas por vía & Permite comparar tendencias temporales entre vías.\\
+5 & Barras del índice estacional & Destaca meses por encima o debajo de la base 100.\\
+6 & Línea de variación interanual & Muestra aumentos o disminuciones respecto al mismo mes del año previo.\\
+7 & Barras de MAE o RMSE & Compara el error de cuatro modelos ya evaluados.\\
+8 & Líneas e intervalo del 80\% & Contrasta valores observados, estimaciones e incertidumbre.\\ \bottomrule
+\end{tabular}
+\end{center}
+
+Las gráficas \textbf{1, 2 y 3 están enlazadas}: elegir un año en la primera actualiza el detalle mensual; elegir un mes en la segunda actualiza la distribución por vía de la tercera. Esto ofrece más detalle que aplicar un filtro aislado. Los controles permiten también elegir qué sección consultar y qué vías visualizar. Las tarjetas y tablas auxiliares no se cuentan entre las ocho gráficas.
+
+\section{Modelos y limitaciones}
+Se reutilizaron las métricas de cuatro modelos presentes en \texttt{final\_metricas\_modelos.csv}: SARIMA, Seasonal Naive, Holt-Winters y Prophet. La aplicación permite comparar MAE y RMSE. También se reutilizó \texttt{final\_pronostico\_prueba\_intervalo80.csv} para presentar estimaciones y valores observados. No se entrenaron modelos nuevos.
+
+Las series nacionales no permiten concluir cuánto turismo recibió Tikal o Flores. Tampoco se deben sumar registros diarios para deducir visitantes mensuales únicos. El año 2026 incluye únicamente datos hasta junio, por lo que su total no debe compararse directamente con años completos. Algunos límites inferiores de predicción son negativos; en la gráfica se muestran desde cero por tratarse de cantidades de movimientos, sin modificar el CSV original.
+
+\section{Planificación y responsable}
+\begin{center}\small
+\begin{tabular}{@{}p{0.62\linewidth}p{0.23\linewidth}@{}}\toprule
+Actividad & Responsable\\\midrule
+Revisión de archivos y selección de preguntas & Osman de León\\
+Preparación de datos y visualizaciones & Osman de León\\
+Interacción, navegación y pruebas & Osman de León\\
+Documentación y entrega del repositorio & Osman de León\\\bottomrule
+\end{tabular}
+\end{center}
+
+El avance se programó para el 22 de octubre y la entrega final del laboratorio para el 25 de octubre de 2026. Se incluye un script de verificación de consistencia de archivos; la interacción debe comprobarse además al ejecutar Streamlit en un navegador.
+
+\section{Repositorio y ejecución}
+Repositorio indicado para el trabajo: \url{https://github.com/Emadlgg/proyecto3_Data.git}. Para iniciar la aplicación: instalar las dependencias con \texttt{pip install -r requirements.txt} y ejecutar \texttt{streamlit run app.py}. La guía del observatorio exige resguardar los datos institucionales; cualquier repositorio que los contenga debe mantenerse privado o excluirlos expresamente.
+\end{document}
