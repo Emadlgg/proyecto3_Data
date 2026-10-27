@@ -1,6 +1,6 @@
 from pathlib import Path
 import pandas as pd
-root=Path(__file__).parent/'data'
+root = Path(__file__).resolve().parent / "data" / "processed"
 t=pd.read_csv(root/'serie_mensual_total.csv',parse_dates=['fecha'])
 v=pd.read_csv(root/'serie_mensual_por_via.csv',parse_dates=['fecha'])
 m=pd.read_csv(root/'final_metricas_modelos.csv')

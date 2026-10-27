@@ -1,0 +1,207 @@
+{
+  "directorio": "C:\\Users\\Emadlg\\Desktop\\UVG\\proyecto3_Data\\data\\processed",
+  "archivos": {
+    "movilidad_mensual_peten.csv": {
+      "filas": 60,
+      "columnas": [
+        "fecha",
+        "subdestino",
+        "segmento",
+        "visitantes",
+        "dias_persona",
+        "estadia_media_dias"
+      ],
+      "duplicados_exactos": 0,
+      "nulos_por_columna": {
+        "fecha": 0,
+        "subdestino": 0,
+        "segmento": 0,
+        "visitantes": 0,
+        "dias_persona": 0,
+        "estadia_media_dias": 30
+      },
+      "fechas_invalidas": 0,
+      "fecha_min": "2025-09-01",
+      "fecha_max": "2026-08-01"
+    },
+    "movilidad_diaria_peten.csv": {
+      "filas": 972,
+      "columnas": [
+        "fecha",
+        "subdestino",
+        "evento",
+        "presencias_diarias"
+      ],
+      "duplicados_exactos": 0,
+      "nulos_por_columna": {
+        "fecha": 0,
+        "subdestino": 0,
+        "evento": 0,
+        "presencias_diarias": 0
+      },
+      "fechas_invalidas": 0,
+      "fecha_min": "2025-04-11",
+      "fecha_max": "2026-09-15"
+    },
+    "tikal_mensual.csv": {
+      "filas": 116,
+      "columnas": [
+        "fecha",
+        "nacionales",
+        "extranjeros",
+        "otros",
+        "total",
+        "advertencia_cero"
+      ],
+      "duplicados_exactos": 0,
+      "nulos_por_columna": {
+        "fecha": 0,
+        "nacionales": 0,
+        "extranjeros": 0,
+        "otros": 0,
+        "total": 0,
+        "advertencia_cero": 0
+      },
+      "fechas_invalidas": 0,
+      "fecha_min": "2017-01-01",
+      "fecha_max": "2026-08-01"
+    },
+    "aimm_pasajeros_mensual.csv": {
+      "filas": 248,
+      "columnas": [
+        "fecha",
+        "flujo",
+        "tipo_pasajero",
+        "pasajeros",
+        "fuente"
+      ],
+      "duplicados_exactos": 0,
+      "nulos_por_columna": {
+        "fecha": 0,
+        "flujo": 0,
+        "tipo_pasajero": 0,
+        "pasajeros": 0,
+        "fuente": 0
+      },
+      "fechas_invalidas": 0,
+      "fecha_min": "2022-01-01",
+      "fecha_max": "2026-04-01"
+    },
+    "aimm_operaciones_mensual.csv": {
+      "filas": 104,
+      "columnas": [
+        "fecha",
+        "tipo_operacion",
+        "operaciones"
+      ],
+      "duplicados_exactos": 0,
+      "nulos_por_columna": {
+        "fecha": 0,
+        "tipo_operacion": 0,
+        "operaciones": 0
+      },
+      "fechas_invalidas": 0,
+      "fecha_min": "2022-01-01",
+      "fecha_max": "2026-04-01"
+    },
+    "ocupacion_peten.csv": {
+      "filas": 36,
+      "columnas": [
+        "fecha",
+        "indice_ocupacion"
+      ],
+      "duplicados_exactos": 0,
+      "nulos_por_columna": {
+        "fecha": 0,
+        "indice_ocupacion": 0
+      },
+      "fechas_invalidas": 0,
+      "fecha_min": "2023-01-01",
+      "fecha_max": "2025-12-01"
+    },
+    "oferta_hotelera_peten.csv": {
+      "filas": 15,
+      "columnas": [
+        "anio",
+        "trimestre",
+        "tipo_alojamiento",
+        "establecimientos",
+        "habitaciones",
+        "plazas_cama"
+      ],
+      "duplicados_exactos": 0,
+      "nulos_por_columna": {
+        "anio": 0,
+        "trimestre": 0,
+        "tipo_alojamiento": 0,
+        "establecimientos": 0,
+        "habitaciones": 0,
+        "plazas_cama": 0
+      }
+    },
+    "migracion_nacional_mensual.csv": {
+      "filas": 210,
+      "columnas": [
+        "fecha",
+        "viajeros_nacionales"
+      ],
+      "duplicados_exactos": 0,
+      "nulos_por_columna": {
+        "fecha": 0,
+        "viajeros_nacionales": 0
+      },
+      "fechas_invalidas": 0,
+      "fecha_min": "2009-01-01",
+      "fecha_max": "2026-06-01"
+    },
+    "comparacion_fuentes_peten.csv": {
+      "filas": 6,
+      "columnas": [
+        "fecha",
+        "boletos_tikal",
+        "pasajeros_aimm",
+        "movilidad_poligono_aeropuerto"
+      ],
+      "duplicados_exactos": 0,
+      "nulos_por_columna": {
+        "fecha": 0,
+        "boletos_tikal": 0,
+        "pasajeros_aimm": 0,
+        "movilidad_poligono_aeropuerto": 0
+      },
+      "fechas_invalidas": 0,
+      "fecha_min": "2025-09-01",
+      "fecha_max": "2026-04-01"
+    }
+  },
+  "errores": [],
+  "advertencias": [
+    "Tikal: 7 meses con cero; confirmar cierre o ausencia de datos",
+    "Oferta hotelera: interpretar cortes como inventario, no sumar trimestres ni anualizar 2026 parcial"
+  ],
+  "notas_metodologicas": [
+    "No sumar subdestinos de telefonia para obtener visitantes unicos de Peten.",
+    "No sumar presencias diarias para calcular visitantes unicos mensuales.",
+    "No interpretar pasajeros AIMM, boletos Tikal y telefonia como universos equivalentes.",
+    "Enero-febrero 2026 sin cobertura telefonica no equivale a cero.",
+    "Estadia media ponderada: dias-persona / visitantes, solo segmento mayor a 1 dia.",
+    "No comparar directamente 2026 parcial con un ano completo."
+  ],
+  "ceros_tikal": [
+    "2017-01-01",
+    "2020-04-01",
+    "2020-05-01",
+    "2020-06-01",
+    "2020-07-01",
+    "2020-08-01",
+    "2020-09-01"
+  ],
+  "meses_comparacion": [
+    "2025-09-01",
+    "2025-10-01",
+    "2025-11-01",
+    "2025-12-01",
+    "2026-03-01",
+    "2026-04-01"
+  ]
+}

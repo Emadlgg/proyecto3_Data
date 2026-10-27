@@ -1,3 +1,24 @@
-streamlit>=1.35
-pandas>=2.0
-plotly>=5.20
+
+# Procesamiento y análisis de datos
+pandas>=2.2,<3.0
+numpy>=1.26,<3.0
+openpyxl>=3.1,<4.0
+pyarrow>=17.0
+
+# Visualizaciones y dashboard
+streamlit>=1.45
+plotly>=6.0
+matplotlib>=3.9
+
+# Jupyter Notebooks
+jupyterlab>=4.3
+notebook>=7.3
+ipykernel>=6.29
+
+# Análisis estadístico y predicciones
+scikit-learn>=1.5
+statsmodels>=0.14
+scipy>=1.14
+
+# Pruebas
+pytest>=8.3
