@@ -1,0 +1,29 @@
+{
+  "rutas": {
+    "raw": "data/raw",
+    "candidatos": "artifacts/runs"
+  },
+  "calibracion": {
+    "anio": 2025,
+    "meses": [9, 10, 11, 12],
+    "factor_reparto": "mediana de visitantes / migracion nacional por subdestino y segmento"
+  },
+  "objetivo": {
+    "anio": 2026,
+    "meses": [1, 2],
+    "unidad": "visitantes estimados por subdestino, segmento y mes"
+  },
+  "evaluacion": {
+    "metodo": "leave-one-month-out retrospectivo",
+    "metricas": ["MAE", "RMSE"],
+    "umbral_aceptacion_mae": null
+  },
+  "aleatoriedad": {
+    "usa_azar": false,
+    "semilla": 42
+  },
+  "publicacion": {
+    "automatica": false,
+    "requiere_aprobacion": true
+  }
+}

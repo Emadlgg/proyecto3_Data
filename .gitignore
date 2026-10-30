@@ -54,3 +54,12 @@ Thumbs.db
 *.synctex.gz
 *.fls
 *.fdb_latexmk
+
+# Datos institucionales y resultados locales del pipeline
+/data/raw/
+/data/processed/
+/artifacts/
+/mlruns/
+/.venv/
+__pycache__/
+.pytest_cache/
