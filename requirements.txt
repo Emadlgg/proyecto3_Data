@@ -1,24 +1,28 @@
 
-# Procesamiento y análisis de datos
+# Procesamiento de datos
 pandas>=2.2,<3.0
 numpy>=1.26,<3.0
 openpyxl>=3.1,<4.0
 pyarrow>=17.0
 
-# Visualizaciones y dashboard
-streamlit>=1.45
-plotly>=6.0
-matplotlib>=3.9
+# Dashboard y visualizaciones
+streamlit>=1.45,<2.0
+plotly>=6.0,<7.0
+matplotlib>=3.9,<4.0
+
+# Analisis estadistico y predicciones
+scikit-learn>=1.5,<2.0
+statsmodels>=0.14,<1.0
+scipy>=1.14,<2.0
+
+# MLOps y seguimiento de experimentos
+mlflow>=3.0,<4.0
+PyYAML>=6.0,<7.0
 
 # Jupyter Notebooks
-jupyterlab>=4.3
-notebook>=7.3
-ipykernel>=6.29
+jupyterlab>=4.3,<5.0
+notebook>=7.3,<8.0
+ipykernel>=6.29,<8.0
 
-# Análisis estadístico y predicciones
-scikit-learn>=1.5
-statsmodels>=0.14
-scipy>=1.14
-
-# Pruebas
-pytest>=8.3
+# Pruebas automaticas
+pytest>=8.3,<10.0

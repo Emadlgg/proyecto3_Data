@@ -4,6 +4,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 from src.visualizaciones_extra import leer, serie_diaria, patron_semanal, lift_eventos
+from src.publicacion import consultar
+from pathlib import Path
 
 st.set_page_config(page_title='Temporalidad y pronósticos | Petén', layout='wide')
 st.title('Dinámica temporal y pronósticos')
@@ -13,12 +15,10 @@ st.caption('Telefonía: presencias diarias y visitantes mensuales no son equival
 def cargar():
     return (leer('movilidad_diaria_peten.csv', carpeta=''),
             leer('movilidad_mensual_peten.csv', carpeta=''),
-            leer('prediccion_peten_ene_feb_2026.csv', carpeta='predicciones'),
-            leer('metricas_prediccion.csv', carpeta='predicciones'),
-            leer('validacion_retroactiva.csv', carpeta='predicciones'))
+            )
 
 try:
-    diaria, mensual, pron, metricas, retro = cargar()
+    diaria, mensual = cargar()
 except (FileNotFoundError, ValueError) as exc:
     st.error(str(exc)); st.stop()
 
@@ -53,11 +53,11 @@ else:
     d1 = serie_diaria(d, sub)
     fig = px.scatter(d1, x='fecha', y='presencias_diarias', title='Presencias por fecha observada',
                      labels={'presencias_diarias':'Presencias (no visitantes únicos)', 'fecha':'Fecha'})
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
     semanal = patron_semanal(d1)
     fig2 = px.bar(semanal, x='nombre', y='presencias_diarias', title='Presencia diaria media según día de semana',
                   labels={'nombre':'Día','presencias_diarias':'Media de presencias'})
-    st.plotly_chart(fig2, use_container_width=True)
+    st.plotly_chart(fig2, width='stretch')
 
 st.subheader('Eventos y diferencia respecto a días regulares')
 st.caption('Comparación descriptiva dentro de la cobertura disponible. No demuestra causalidad ni controla por temporada u otros factores.')
@@ -70,31 +70,38 @@ else:
                   title='Diferencia porcentual frente a días regulares del mismo día de semana',
                   labels={'lift_pct':'Diferencia (%)', 'fecha':'Fecha'})
     fig3.add_hline(y=0, line_dash='dash')
-    st.plotly_chart(fig3, use_container_width=True)
+    st.plotly_chart(fig3, width='stretch')
     with st.expander('Detalle del cálculo de eventos'):
         st.dataframe(lev[['fecha','evento','presencias_diarias','referencia','lift_pct']], hide_index=True)
 
-st.subheader('Estimación de enero y febrero de 2026')
-obs = mensual.loc[mensual.subdestino.eq(sub) & mensual.segmento.eq(seg), ['fecha','visitantes']].sort_values('fecha')
-est = pron.loc[pron.subdestino.eq(sub) & pron.segmento.eq(seg)].sort_values('fecha')
-fig4 = go.Figure()
-fig4.add_trace(go.Scatter(x=obs.fecha, y=obs.visitantes, mode='markers+lines', name='Observado'))
-fig4.add_trace(go.Scatter(x=est.fecha, y=est.visitantes_estimados, mode='markers', marker={'symbol':'diamond','size':12},
-                          name='Estimación ene–feb 2026'))
-fig4.update_layout(title=f'Visitantes del polígono — {sub} / {seg}', xaxis_title='Mes', yaxis_title='Visitantes estimados u observados')
-st.plotly_chart(fig4, use_container_width=True)
-st.caption('Estimación exploratoria basada en perfil estacional nacional 2017–2024 y factor mediano de reparto sep–dic 2025. No equivale al total único de Petén. Los meses sin telefonía no son ceros.')
-
-met = metricas.loc[metricas.subdestino.eq(sub) & metricas.segmento.eq(seg)]
-if not met.empty:
-    a,b,c = st.columns(3)
-    a.metric('MAE (validación retrospectiva)', f'{met.iloc[0].MAE:,.0f}')
-    b.metric('RMSE (validación retrospectiva)', f'{met.iloc[0].RMSE:,.0f}')
-    c.metric('Meses evaluados', int(met.iloc[0].meses_evaluados))
-    st.caption('La validación excluye cada mes evaluado de la calibración, pero solo usa sep–dic 2025. No mide el error real de ene–feb 2026, que carecen de observación telefónica.')
-val = retro.loc[retro.subdestino.eq(sub) & retro.segmento.eq(seg)].copy()
-if not val.empty:
-    val = val.melt(id_vars='fecha', value_vars=['observado','estimado'], var_name='tipo', value_name='visitantes')
-    fig5 = px.line(val, x='fecha', y='visitantes', color='tipo', markers=True,
-                   title='Validación retrospectiva: observado frente a estimado')
-    st.plotly_chart(fig5, use_container_width=True)
+st.subheader('Estimaciones de enero y febrero de 2026 — publicación controlada')
+# Nunca consultar data/processed/predicciones como si fuera una version aprobada.
+try:
+    aprobada = consultar(Path(__file__).resolve().parents[1] / 'artifacts')
+except (ValueError, KeyError, FileNotFoundError, OSError) as exc:
+    st.error(f'No es posible verificar la integridad de la version aprobada: {exc}')
+    st.stop()
+if aprobada is None:
+    st.warning('No hay estimaciones aprobadas disponibles. El ultimo candidato real fue rechazado por la regla de aceptacion. Se conservan los datos observados.')
+    obs = mensual.loc[mensual.subdestino.eq(sub) & mensual.segmento.eq(seg), ['fecha','visitantes']].sort_values('fecha')
+    if not obs.empty:
+        st.plotly_chart(px.line(obs, x='fecha', y='visitantes', markers=True,
+                                title='Visitantes observados (sin pronosticos publicados)'), width='stretch')
+else:
+    ruta, meta = aprobada
+    if meta.get('demo_sintetica'):
+        st.error('La version activa es sintetica; no puede mostrarse como prediccion institucional.')
+        st.stop()
+    pron = pd.read_csv(ruta, parse_dates=['fecha'])
+    obs = mensual.loc[mensual.subdestino.eq(sub) & mensual.segmento.eq(seg), ['fecha','visitantes']].sort_values('fecha')
+    est = pron.loc[pron.subdestino.eq(sub) & pron.segmento.eq(seg)].sort_values('fecha')
+    fig4 = go.Figure()
+    fig4.add_trace(go.Scatter(x=obs.fecha, y=obs.visitantes, mode='lines+markers', name='Observado'))
+    fig4.add_trace(go.Scatter(x=est.fecha, y=est.visitantes_estimados, mode='markers',
+                              marker={'symbol':'diamond','size':12}, name='Estimacion aprobada'))
+    fig4.update_layout(title=f'Visitantes del poligono — {sub} / {seg}', xaxis_title='Mes', yaxis_title='Visitantes')
+    st.plotly_chart(fig4, width='stretch')
+    st.caption(f"Version: {meta.get('run_id')} | Generada: {meta.get('generado_utc')} | "
+               f"MAE validacion: {meta.get('metrica_validacion_mae')} | "
+               f"Procedimiento: {meta.get('version_procedimiento')} | Unidad: {meta.get('unidad')}")
+    st.info('Las estimaciones no son observaciones de telefonia ni visitantes unicos de todo Peten. Enero y febrero de 2026 no tienen cobertura telefonica comparable.')

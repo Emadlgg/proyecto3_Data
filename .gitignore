@@ -4,12 +4,18 @@
 venv/
 env/
 ENV/
+virtualenv/
 
 # Python
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
 
 # Variables de entorno y credenciales
 .env
@@ -17,49 +23,92 @@ __pycache__/
 !.env.example
 *.key
 *.pem
+*.p12
+*.pfx
+.streamlit/secrets.toml
 
-# Archivos de datos
+# Datos institucionales
+data/raw/
+data/processed/
+data/legacy/
+
+# Archivos de datos fuera de data/
 *.csv
 *.xlsx
 *.xls
+*.xlsm
 *.parquet
-*.db
+*.feather
 *.sqlite
 *.sqlite3
+*.db
 
-# Jupyter Notebook
+# Excepciones para datos de ejemplo autorizados
+!tests/fixtures/*.csv
+!examples/*.csv
+
+# MLflow
+mlruns/
+mlartifacts/
+mlflow.db
+mlflow.db-*
+mlflow-artifacts/
+
+# Artefactos y versiones
+artifacts/
+models/
+checkpoints/
+
+# Registros
+logs/
+*.log
+*.tmp
+*.bak
+*.pid
+
+# Jupyter
 .ipynb_checkpoints/
+.jupyter/
 
-# Streamlit
-.streamlit/secrets.toml
+# Pruebas y cobertura
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
 
-# IDE
+# VS Code y otros IDE
 .vscode/
 .idea/
+*.code-workspace
 
 # Sistema operativo
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Logs y temporales
-*.log
-*.tmp
-*.bak
+# Docker local
+docker-data/
+docker-volumes/
+*.tar
 
-# Archivos de compilacion LaTeX
+# LaTeX
 *.aux
-*.log
-*.out
-*.toc
-*.synctex.gz
-*.fls
+*.bbl
+*.blg
 *.fdb_latexmk
+*.fls
+*.lof
+*.lot
+*.out
+*.synctex.gz
+*.toc
 
-# Datos institucionales y resultados locales del pipeline
-/data/raw/
-/data/processed/
-/artifacts/
-/mlruns/
-/.venv/
-__pycache__/
-.pytest_cache/
+# Archivos temporales
+*.swp
+*.swo
+*~
+~$*

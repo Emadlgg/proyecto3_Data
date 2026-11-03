@@ -1,29 +1,67 @@
 {
   "rutas": {
     "raw": "data/raw",
-    "candidatos": "artifacts/runs"
+    "candidatos": "artifacts/runs",
+    "artefactos": "artifacts"
   },
   "calibracion": {
     "anio": 2025,
-    "meses": [9, 10, 11, 12],
+    "meses": [
+      9,
+      10,
+      11,
+      12
+    ],
     "factor_reparto": "mediana de visitantes / migracion nacional por subdestino y segmento"
   },
   "objetivo": {
     "anio": 2026,
-    "meses": [1, 2],
+    "meses": [
+      1,
+      2
+    ],
     "unidad": "visitantes estimados por subdestino, segmento y mes"
   },
   "evaluacion": {
-    "metodo": "leave-one-month-out retrospectivo",
-    "metricas": ["MAE", "RMSE"],
-    "umbral_aceptacion_mae": null
+    "metodo": "rolling origin oct-dic 2025, sin informacion futura",
+    "meses": [
+      10,
+      11,
+      12
+    ],
+    "metricas": [
+      "MAE",
+      "RMSE"
+    ],
+    "referencia": "ultimo valor mensual observado",
+    "ratio_mae_maximo": 1.0,
+    "nmae_maximo": 0.35
   },
   "aleatoriedad": {
     "usa_azar": false,
     "semilla": 42
   },
   "publicacion": {
-    "automatica": false,
+    "automatica": true,
     "requiere_aprobacion": true
+  },
+  "mlflow": {
+    "tracking_uri": "sqlite:///mlflow.db",
+    "experimento": "Observatorio_Tikal_Flores_Peten"
+  },
+  "monitoreo": {
+    "variacion_mensual_alerta": 0.75,
+    "meses_movilidad_esperados": [
+      "2025-09",
+      "2025-10",
+      "2025-11",
+      "2025-12",
+      "2026-03",
+      "2026-04",
+      "2026-05",
+      "2026-06",
+      "2026-07",
+      "2026-08"
+    ]
   }
 }

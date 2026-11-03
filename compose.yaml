@@ -1,0 +1,57 @@
+
+services:
+  mlflow:
+    build: .
+    command:
+      - python
+      - -m
+      - mlflow
+      - server
+      - --host
+      - 0.0.0.0
+      - --port
+      - "5000"
+      - --backend-store-uri
+      - sqlite:////app/state/mlflow.db
+      - --serve-artifacts
+      - --artifacts-destination
+      - /app/state/mlartifacts
+      - --allowed-hosts
+      - mlflow,mlflow:5000,localhost,localhost:5000,127.0.0.1,127.0.0.1:5000
+    ports:
+      - "127.0.0.1:5000:5000"
+    volumes:
+      - mlflow_state:/app/state
+    restart: unless-stopped
+
+  dashboard:
+    build: .
+    ports:
+      - "127.0.0.1:8501:8501"
+    volumes:
+      - ./data/processed:/app/data/processed:ro
+      - ./artifacts:/app/artifacts:ro
+    restart: unless-stopped
+
+  pipeline:
+    build: .
+    profiles: ["tools"]
+    command:
+      - python
+      - -m
+      - src.pipeline
+      - --config
+      - config/mlops.json
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      GIT_COMMIT: ${GIT_COMMIT:-desconocido}
+    depends_on:
+      - mlflow
+    volumes:
+      - ./data/raw:/app/data/raw:ro
+      - ./data/processed:/app/data/processed
+      - ./artifacts:/app/artifacts
+    restart: "no"
+
+volumes:
+  mlflow_state:
