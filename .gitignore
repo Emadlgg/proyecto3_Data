@@ -1,12 +1,25 @@
 
-# Entornos virtuales
+# ============================================================
+# PROYECTO 3 - OBSERVATORIO TURISTICO DE PETEN
+# UVG - Data Science - 2026
+# ============================================================
+
+
+# ============================================================
+# 1. ENTORNOS VIRTUALES
+# ============================================================
+
 .venv/
 venv/
 env/
 ENV/
 virtualenv/
 
-# Python
+
+# ============================================================
+# 2. PYTHON Y PAQUETES
+# ============================================================
+
 __pycache__/
 *.py[cod]
 *.pyo
@@ -16,61 +29,150 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+pip-wheel-metadata/
 
-# Variables de entorno y credenciales
+
+# ============================================================
+# 3. VARIABLES DE ENTORNO Y CREDENCIALES
+# ============================================================
+
 .env
 .env.*
 !.env.example
+
 *.key
 *.pem
 *.p12
 *.pfx
+
 .streamlit/secrets.toml
 
-# Datos institucionales
+credentials.json
+secrets.json
+service-account.json
+
+
+# ============================================================
+# 4. DATOS INSTITUCIONALES
+# ============================================================
+
 data/raw/
 data/processed/
 data/legacy/
+data/interim/
+data/external/
 
-# Archivos de datos fuera de data/
+# Archivos de datos en cualquier ubicacion
 *.csv
+*.tsv
 *.xlsx
 *.xls
 *.xlsm
 *.parquet
 *.feather
+*.arrow
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.joblib
 *.sqlite
 *.sqlite3
 *.db
 
-# Excepciones para datos de ejemplo autorizados
+# Excepciones para datos sinteticos autorizados
 !tests/fixtures/*.csv
+!tests/fixtures/**/*.csv
 !examples/*.csv
+!examples/**/*.csv
 
-# MLflow
+# Importante:
+# Las excepciones anteriores solo deben utilizarse
+# con datos sinteticos o autorizados para publicacion.
+
+
+# ============================================================
+# 5. MLFLOW Y SEGUIMIENTO DE EXPERIMENTOS
+# ============================================================
+
 mlruns/
 mlartifacts/
-mlflow.db
-mlflow.db-*
 mlflow-artifacts/
 
-# Artefactos y versiones
+mlflow.db
+mlflow.db-*
+
+# Bases temporales de seguimiento
+*.db-journal
+*.db-shm
+*.db-wal
+
+
+# ============================================================
+# 6. ARTEFACTOS Y MODELOS
+# ============================================================
+
 artifacts/
 models/
 checkpoints/
 
-# Registros
-logs/
-*.log
-*.tmp
-*.bak
-*.pid
+*.onnx
+*.pt
+*.pth
+*.ckpt
+*.h5
+*.keras
 
-# Jupyter
+
+# ============================================================
+# 7. RESPALDOS DE ORGANIZACION
+# ============================================================
+
+_organizacion_backup/
+_organizacion_backup_*/
+
+*.backup
+*.bak
+*.orig
+
+
+# ============================================================
+# 8. POWER BI
+# ============================================================
+
+# Archivos temporales de Power BI
+*.pbit.tmp
+*.pbix.tmp
+*.pbix.lock
+*.pbix.autorecover
+
+# Archivos locales de Power BI Desktop
+**/.pbi/localSettings.json
+**/.pbi/cache.abf
+**/.pbi/unappliedChanges.json
+
+# NO ignoramos *.pbix globalmente.
+# El PBIX del laboratorio puede entregarse en un
+# repositorio privado o por un canal autorizado.
+#
+# ADVERTENCIA:
+# Los archivos PBIX pueden contener datos importados.
+# Verificar su contenido antes de subirlos.
+
+
+# ============================================================
+# 9. JUPYTER Y NOTEBOOKS
+# ============================================================
+
 .ipynb_checkpoints/
 .jupyter/
+.virtual_documents/
 
-# Pruebas y cobertura
+
+# ============================================================
+# 10. PRUEBAS Y COBERTURA
+# ============================================================
+
 .pytest_cache/
 .coverage
 .coverage.*
@@ -79,23 +181,68 @@ htmlcov/
 .nox/
 .mypy_cache/
 .ruff_cache/
+.hypothesis/
 
-# VS Code y otros IDE
+
+# ============================================================
+# 11. REGISTROS Y ARCHIVOS TEMPORALES
+# ============================================================
+
+logs/
+*.log
+*.tmp
+*.temp
+*.pid
+
+*.swp
+*.swo
+*~
+~$*
+
+
+# ============================================================
+# 12. EDITORES E IDE
+# ============================================================
+
 .vscode/
 .idea/
 *.code-workspace
 
-# Sistema operativo
+.spyproject/
+.ropeproject/
+
+
+# ============================================================
+# 13. SISTEMAS OPERATIVOS
+# ============================================================
+
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Docker local
+$RECYCLE.BIN/
+.Trashes/
+
+
+# ============================================================
+# 14. DOCKER
+# ============================================================
+
 docker-data/
 docker-volumes/
+
 *.tar
 
-# LaTeX
+# No ignorar:
+# Dockerfile
+# compose.yaml
+# .dockerignore
+
+
+# ============================================================
+# 15. LATEX
+# ============================================================
+
 *.aux
 *.bbl
 *.blg
@@ -106,9 +253,79 @@ docker-volumes/
 *.out
 *.synctex.gz
 *.toc
+*.nav
+*.snm
+*.vrb
+*.run.xml
+*.bcf
 
-# Archivos temporales
-*.swp
-*.swo
-*~
-~$*
+_minted-*/
+
+# Conservamos:
+# *.tex
+# *.pdf
+
+
+# ============================================================
+# 16. ARCHIVOS DE EXPORTACION TEMPORALES
+# ============================================================
+
+*.part
+*.download
+*.crdownload
+
+# No ignoramos todos los ZIP:
+# algunos pueden ser entregables oficiales.
+
+
+# ============================================================
+# 17. STREAMLIT
+# ============================================================
+
+# Se conserva .streamlit/config.toml
+# porque contiene la configuracion visual del proyecto.
+
+.streamlit/cache/
+
+
+# ============================================================
+# 18. LABORATORIOS
+# ============================================================
+
+# Se conserva el codigo de:
+# labs/lab10/
+# labs/lab11/
+# labs/lab12_powerbi/
+#
+# Se conservan los informes PDF y fuentes LaTeX.
+#
+# Los CSV institucionales quedan excluidos por
+# las reglas generales de datos.
+#
+# Los PBIX deben revisarse antes de publicarse.
+
+
+# ============================================================
+# 19. ARCHIVOS IMPORTANTES QUE SI DEBEN VERSIONARSE
+# ============================================================
+
+# app.py
+# pages/
+# src/
+# tests/
+# notebooks/
+# scripts/
+# config/
+# labs/
+# docs/
+# README.md
+# requirements.txt
+# requirements-mlops.txt
+# Dockerfile
+# compose.yaml
+# .dockerignore
+# .streamlit/config.toml
+
+# ============================================================
+# FIN
+# ============================================================
