@@ -85,3 +85,35 @@ def version_aprobada(root: Path = ROOT / 'artifacts'):
             or not meta.get('evaluacion', {}).get('aprobado', False)):
         return None
     return archivo, meta
+
+
+def ultimo_candidato(root: Path = ROOT / 'artifacts') -> dict | None:
+    """Resumen del candidato más reciente evaluado por el pipeline (aprobado o no).
+
+    Solo lectura: no publica ni modifica nada. Devuelve None si no hay ejecuciones legibles.
+    """
+    runs = Path(root) / 'runs'
+    if not runs.is_dir():
+        return None
+    for carpeta in sorted((c for c in runs.iterdir() if c.is_dir()), reverse=True):
+        try:
+            rec = json.loads((carpeta / 'ejecucion.json').read_text(encoding='utf-8'))
+        except (OSError, ValueError):
+            continue
+        if not isinstance(rec, dict):
+            continue
+        dec = rec.get('decision') if isinstance(rec.get('decision'), dict) else {}
+        return {
+            'run_id': rec.get('run_id', carpeta.name),
+            'estado': rec.get('estado', 'DESCONOCIDO'),
+            'inicio_utc': rec.get('inicio_utc'),
+            'aprobado': dec.get('aprobado'),
+            'razon': dec.get('razon'),
+            'mae_modelo': dec.get('MAE_modelo'),
+            'mae_referencia': dec.get('MAE_referencia'),
+            'ratio_mae': dec.get('ratio_mae'),
+            'umbral_ratio': dec.get('umbral_ratio'),
+            'publicado': bool(rec.get('publicado', False)),
+            'errores': rec.get('errores') or [],
+        }
+    return None

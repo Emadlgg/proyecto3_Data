@@ -1,5 +1,5 @@
 {
-  "directorio": "/app/data/processed",
+  "directorio": "C:\\Users\\Emadlg\\Desktop\\UVG\\proyecto3_Data\\data\\processed",
   "archivos": {
     "movilidad_mensual_peten.csv": {
       "filas": 60,

@@ -24,6 +24,7 @@ services:
         python -m src.indicadores &&
         python -m src.mercados_emisores &&
         python -m src.predicciones &&
+        python -m src.imputacion &&
         python -m src.encuestas
     volumes:
       - ./data/raw:/app/data/raw:ro
