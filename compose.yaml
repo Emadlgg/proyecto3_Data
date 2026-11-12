@@ -1,7 +1,42 @@
-
+# Uso rápido (los datos institucionales los entrega la cátedra y NO viven en el repo ni en la imagen):
+#   1) Colocar los archivos originales en ./data/raw
+#   2) docker compose --profile tools run --rm etl       # genera ./data/processed
+#   3) docker compose up --build dashboard               # http://localhost:8501
 services:
-  mlflow:
+  dashboard:
     build: .
+    ports:
+      - "127.0.0.1:8501:8501"
+    volumes:
+      - ./data/processed:/app/data/processed:ro
+      - ./artifacts:/app/artifacts:ro
+    restart: unless-stopped
+
+  etl:
+    build: .
+    profiles: ["tools"]
+    command:
+      - sh
+      - -c
+      - >
+        python -m src.etl &&
+        python -m src.validaciones &&
+        python -m src.indicadores &&
+        python -m src.mercados_emisores &&
+        python -m src.predicciones &&
+        python -m src.encuestas
+    volumes:
+      - ./data/raw:/app/data/raw:ro
+      - ./data/processed:/app/data/processed
+      - ./docs:/app/docs
+    restart: "no"
+
+  mlflow:
+    build:
+      context: .
+      args:
+        REQS: requirements.txt
+    profiles: ["tools"]
     command:
       - python
       - -m
@@ -24,17 +59,11 @@ services:
       - mlflow_state:/app/state
     restart: unless-stopped
 
-  dashboard:
-    build: .
-    ports:
-      - "127.0.0.1:8501:8501"
-    volumes:
-      - ./data/processed:/app/data/processed:ro
-      - ./artifacts:/app/artifacts:ro
-    restart: unless-stopped
-
   pipeline:
-    build: .
+    build:
+      context: .
+      args:
+        REQS: requirements.txt
     profiles: ["tools"]
     command:
       - python

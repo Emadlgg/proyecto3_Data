@@ -1,0 +1,8 @@
+# Dependencias mínimas para ejecutar el dashboard y el ETL dentro de Docker.
+# (requirements.txt completo = desarrollo: notebooks, pruebas, MLflow.)
+pandas>=2.2,<3.0
+numpy>=1.26,<3.0
+openpyxl>=3.1,<4.0
+pyarrow>=17.0
+streamlit>=1.50,<2.0
+plotly>=6.0,<7.0

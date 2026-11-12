@@ -51,6 +51,33 @@ def lift_eventos(df):
     return eventos
 
 
+def lift_por_evento(df):
+    """Lift medio (%) de cada festividad frente al día regular del mismo día de semana.
+
+    Lift_e = media( presencias_d / referencia_dow(d) - 1 ) * 100, sobre los días d del evento e.
+    Devuelve evento, lift_medio_pct, dias (n días comparables) y referencia_media.
+    """
+    cols = ['evento', 'lift_medio_pct', 'dias', 'referencia_media']
+    e = lift_eventos(df)
+    e = e.loc[e.lift_pct.notna()]
+    if e.empty:
+        return pd.DataFrame(columns=cols)
+    out = (e.groupby('evento', as_index=False)
+           .agg(lift_medio_pct=('lift_pct', 'mean'), dias=('fecha', 'nunique'),
+                referencia_media=('referencia', 'mean')))
+    return out.sort_values('lift_medio_pct', ascending=False).reset_index(drop=True)[cols]
+
+
+def fin_de_semana_vs_habiles(daily):
+    """Media diaria de sáb–dom vs lun–vie y diferencia porcentual. No suma días."""
+    d = daily.copy()
+    d['finde'] = d.fecha.dt.dayofweek >= 5
+    m = d.groupby('finde').presencias_diarias.mean()
+    finde, habil = m.get(True, np.nan), m.get(False, np.nan)
+    dif = 100 * (finde / habil - 1) if pd.notna(finde) and pd.notna(habil) and habil > 0 else np.nan
+    return {'media_finde': finde, 'media_habil': habil, 'diferencia_pct': dif}
+
+
 def comparacion_indices(df):
     """Mantiene las tres series separadas; solo compara variación relativa."""
     cols = ['indice_boletos_tikal','indice_pasajeros_aimm','indice_movilidad_poligono_aeropuerto']

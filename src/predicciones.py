@@ -113,9 +113,13 @@ def validar_retroactivo(mov: pd.DataFrame, mig: pd.DataFrame) -> tuple[pd.DataFr
                           'observado':float(fila.visitantes),'estimado':estimado,
                           'error':estimado-float(fila.visitantes)})
     detalle = pd.DataFrame(filas).sort_values(['fecha','subdestino','segmento']).reset_index(drop=True)
+    # Error porcentual absoluto; solo definido cuando lo observado es positivo.
+    detalle['error_pct_abs'] = np.where(detalle.observado > 0,
+                                        100 * detalle.error.abs() / detalle.observado, np.nan)
     resumen = (detalle.groupby(['subdestino','segmento'],as_index=False)
                .agg(MAE=('error',lambda x:float(np.mean(np.abs(x)))),
                     RMSE=('error',lambda x:float(np.sqrt(np.mean(np.square(x))))),
+                    MAPE=('error_pct_abs',lambda x:float(np.nanmean(x)) if x.notna().any() else float('nan')),
                     meses_evaluados=('fecha','nunique')))
     return detalle,resumen
 

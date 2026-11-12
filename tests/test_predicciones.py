@@ -59,3 +59,10 @@ def test_validacion_no_usa_mes_evaluado():
     diciembre=detalle[detalle.fecha.dt.month.eq(12)].iloc[0]
     assert diciembre.estimado < 100
     assert diciembre.observado == 10000
+
+
+def test_validacion_reporta_mape():
+    mov, mig = ejemplo()
+    _, resumen = validar_retroactivo(mov, mig)
+    assert 'MAPE' in resumen.columns
+    assert (resumen.MAPE >= 0).all()

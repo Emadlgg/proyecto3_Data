@@ -6,6 +6,7 @@ import streamlit as st
 from src.ui.estilos import aplicar_estilos
 from src.ui.componentes import encabezado
 from src.ui.graficas import aplicar_tema
+from src.ui.paleta import PRIMARIO, ACENTO
 from src.ui.analitica import cargar, datos_disponibles
 from src.visualizaciones_extra import ocupacion_y_afluencia
 
@@ -87,8 +88,21 @@ else:
     st.metric("Última ocupación del período seleccionado", f"{ultimo.ocupacion_pct:.1f}%")
     fig = px.line(d, x="fecha", y="ocupacion_pct", markers=True,
                   labels={"fecha": "Mes", "ocupacion_pct": "Ocupación (%)"})
+    fig.update_traces(line_color=PRIMARIO, marker=dict(size=9, color=PRIMARIO))
     fig.update_yaxes(range=[0, 100])
-    st.plotly_chart(aplicar_tema(fig, "Evolución mensual de la ocupación"), width="stretch")
+    sel_ocup = st.plotly_chart(aplicar_tema(fig, "Evolución mensual de la ocupación (selecciona un mes)"),
+                               width="stretch", on_select="rerun", selection_mode="points",
+                               key="hot_ocupacion")
+    pts = getattr(getattr(sel_ocup, "selection", None), "points", []) or []
+    if pts:
+        try:
+            st.session_state["hot_mes"] = pd.Timestamp(pts[0]["x"]).to_period("M").to_timestamp()
+        except (ValueError, TypeError, KeyError):
+            pass
+mes_foco = st.session_state.get("hot_mes")
+if mes_foco is not None:
+    st.caption(f"Mes en foco: **{pd.Timestamp(mes_foco):%Y-%m}**. Se resalta en el cruce con Tikal "
+               "y selecciona el mes de la comparación territorial.")
 st.caption("Porcentaje de ocupación departamental; no representa visitantes únicos.")
 
 st.divider()
@@ -130,7 +144,9 @@ if datos_disponibles(tik, ["fecha", "total"]):
             hover_data={"mes_etiqueta": True, "fecha": False},
             labels={"boletos_tikal": "Boletos Tikal", "ocupacion_pct": "Ocupación (%)"},
         )
-        fig.update_traces(textposition="top center", marker=dict(size=12))
+        colores = [ACENTO if (mes_foco is not None and pd.Timestamp(f) == pd.Timestamp(mes_foco)) else PRIMARIO
+                   for f in cruce["fecha"]]
+        fig.update_traces(textposition="top center", marker=dict(size=13, color=colores))
         fig.update_layout(margin=dict(t=75, b=50))
         st.plotly_chart(aplicar_tema(fig, "Boletos Tikal y ocupación hotelera (cuatro meses)"), width="stretch")
         st.caption("Comparación descriptiva: boletos de Tikal y ocupación hotelera miden universos diferentes. No demuestra causalidad.")
@@ -142,12 +158,21 @@ st.subheader("Comparación territorial · polígonos individuales")
 if datos_disponibles(mov, ["fecha", "subdestino", "visitantes"]):
     meses = sorted(pd.to_datetime(mov.fecha.dropna().unique()))
     if meses:
-        mes = st.selectbox("Mes de movilidad", meses, index=len(meses)-1,
+        idx = len(meses) - 1
+        if mes_foco is not None:
+            coincide = [i for i, m_ in enumerate(meses) if pd.Timestamp(m_) == pd.Timestamp(mes_foco)]
+            if coincide:
+                idx = coincide[0]
+            else:
+                st.info(f"No hay movilidad telefónica para {pd.Timestamp(mes_foco):%Y-%m}; "
+                        "se muestra el último mes disponible.")
+        mes = st.selectbox("Mes de movilidad", meses, index=idx,
                            format_func=lambda x: pd.Timestamp(x).strftime("%Y-%m"))
         territorios = comparacion_poligonos(mov, mes)
         if not territorios.empty:
             fig = px.bar(territorios, x="subdestino", y="visitantes",
                          labels={"subdestino": "Polígono", "visitantes": "Visitantes estimados del polígono"})
+            fig.update_traces(marker_color=PRIMARIO)
             st.plotly_chart(aplicar_tema(fig, "Afluencia relativa por polígono"), width="stretch")
             st.caption("Cada polígono se interpreta individualmente; no se suman para obtener visitantes únicos de Petén.")
         else:

@@ -40,3 +40,22 @@ def test_lift_regular_mismo_dia_semana():
                       'evento':['Regular','Feriado'],'presencias_diarias':[100,125]})
     out = lift_eventos(d)
     assert round(out.lift_pct.iloc[0], 3) == 25.0
+
+
+def test_lift_por_evento_agrega_por_festividad():
+    import pandas as pd
+    from src.visualizaciones_extra import lift_por_evento
+    f = pd.to_datetime(['2025-04-07', '2025-04-14', '2025-04-21', '2025-04-23'])  # lunes, lunes, lunes, miércoles
+    df = pd.DataFrame({'fecha': f, 'subdestino': 'A', 'evento': ['Regular', 'Regular', 'Feria', 'Feria'],
+                       'presencias_diarias': [100, 100, 150, 120]})
+    out = lift_por_evento(df)
+    assert out.loc[out.evento.eq('Feria'), 'dias'].iloc[0] == 1  # el miércoles no tiene referencia regular
+    assert abs(out.loc[out.evento.eq('Feria'), 'lift_medio_pct'].iloc[0] - 50) < 1e-9
+
+
+def test_fin_de_semana_vs_habiles():
+    import pandas as pd
+    from src.visualizaciones_extra import fin_de_semana_vs_habiles
+    f = pd.date_range('2025-04-07', periods=7)  # lun..dom
+    daily = pd.DataFrame({'fecha': f, 'presencias_diarias': [100] * 5 + [150, 150]})
+    assert abs(fin_de_semana_vs_habiles(daily)['diferencia_pct'] - 50) < 1e-9

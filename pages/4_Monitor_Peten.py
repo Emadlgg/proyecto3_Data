@@ -5,6 +5,7 @@ import streamlit as st
 from src.ui.estilos import aplicar_estilos
 from src.ui.componentes import encabezado, aviso_metodologico
 from src.ui.graficas import aplicar_tema
+from src.ui.paleta import NEUTRO, ESTIMACION
 from src.ui.analitica import cargar, datos_disponibles
 
 
@@ -79,11 +80,24 @@ if datos_disponibles(comp, ['fecha', *cols, 'boletos_tikal', 'pasajeros_aimm',
         fig = px.line(largo, x='fecha', y='indice', color='fuente', markers=True,
                       labels={'fecha': 'Mes', 'indice': 'Índice base 100', 'fuente': 'Fuente'})
         fig.update_traces(connectgaps=False)
-        fig.add_hline(y=100, line_dash='dash', line_color='gray')
-        st.plotly_chart(aplicar_tema(fig, 'Evolución relativa de las tres fuentes'), width='stretch')
+        fig.add_hline(y=100, line_dash='dash', line_color=NEUTRO)
+        sel_idx = st.plotly_chart(aplicar_tema(fig, 'Evolución relativa de las tres fuentes (selecciona un mes)'),
+                                  width='stretch', on_select='rerun', selection_mode='points',
+                                  key='mon_indices')
+        pts = getattr(getattr(sel_idx, 'selection', None), 'points', []) or []
+        if pts:
+            try:
+                st.session_state['mon_mes_foco'] = pd.Timestamp(pts[0]['x']).to_period('M').to_timestamp()
+            except (ValueError, TypeError, KeyError):
+                pass
     meses = sorted(comp.fecha.dropna().unique())
     if meses:
-        mes = st.selectbox('Mes coincidente', meses,
+        foco = st.session_state.get('mon_mes_foco')
+        idx = 0
+        if foco is not None:
+            hit = [i for i, m_ in enumerate(meses) if pd.Timestamp(m_) == pd.Timestamp(foco)]
+            idx = hit[0] if hit else 0
+        mes = st.selectbox('Mes coincidente', meses, index=idx,
                            format_func=lambda x: pd.Timestamp(x).strftime('%Y-%m'))
         fila = comp.loc[comp.fecha.eq(pd.Timestamp(mes))].iloc[0]
         a, b, c = st.columns(3)
@@ -102,7 +116,7 @@ if datos_disponibles(comp, ['fecha', *cols, 'boletos_tikal', 'pasajeros_aimm',
         fig = px.line(variaciones, x='fecha', y='variacion_pct', color='fuente',
                       markers=True, labels={'fecha': 'Mes', 'variacion_pct': 'Variación mensual (%)', 'fuente': 'Fuente'})
         fig.update_traces(connectgaps=False)
-        fig.add_hline(y=0, line_dash='dash', line_color='gray')
+        fig.add_hline(y=0, line_dash='dash', line_color=NEUTRO)
         st.plotly_chart(aplicar_tema(fig, 'Cambios mensuales de las fuentes'), width='stretch')
     else:
         st.info('No hay variaciones mensuales consecutivas para la selección.')
@@ -122,11 +136,22 @@ if datos_disponibles(tik, ['fecha', 'total', 'nacionales', 'extranjeros', 'otros
     elegidos = st.multiselect('Años de Tikal', anios, default=anios[-4:])
     d = tik.loc[tik.fecha.dt.year.isin(elegidos)].sort_values('fecha').copy()
     if not d.empty:
+        ceros = d.total.eq(0)
+        # Un mes con total 0 se muestra como hueco ("Sin dato"), nunca como valor cero.
+        d.loc[ceros, ['total', 'nacionales', 'extranjeros', 'otros']] = float('nan')
         fig = px.line(d, x='fecha', y=categoria, markers=True,
                       labels={'fecha': 'Mes', categoria: 'Boletos registrados'})
+        fig.update_traces(connectgaps=False)
+        cierre = d.loc[ceros & d.fecha.between('2020-04-01', '2020-09-30'), 'fecha']
+        if not cierre.empty:
+            fig.add_vrect(x0=cierre.min() - pd.Timedelta(days=15), x1=cierre.max() + pd.Timedelta(days=15),
+                          fillcolor=ESTIMACION, opacity=.10, line_width=0,
+                          annotation_text='Sin registros (probable cierre COVID-19, por confirmar)',
+                          annotation_position='top left')
         st.plotly_chart(aplicar_tema(fig, 'Boletos mensuales de Tikal'), width='stretch')
-        if d.total.eq(0).any():
-            st.warning('Existen meses con cero: verificar si representan cierre o ausencia de datos.')
+        if ceros.any():
+            st.warning('Los meses con total cero se muestran como "Sin dato": no se interpretan como cero visitas. '
+                       'Confirmar con la fuente si corresponden a cierre (2020) o a ausencia de registro.')
 
 if datos_disponibles(air, ['fecha', 'flujo', 'tipo_pasajero', 'pasajeros']):
     st.subheader('4. AIMM · pasajeros')
