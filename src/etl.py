@@ -112,6 +112,17 @@ def movilidad_diaria(raw: Path) -> pd.DataFrame:
     return result.sort_values(['fecha','subdestino','evento']).reset_index(drop=True)
 
 
+# Meses con total 0 en la fuente de Tikal y su explicación documentada.
+# - Abr-sep 2020: cierre del parque por la pandemia (a 22-sep-2020 los parques arqueológicos seguían
+#   cerrados; la serie se reanuda en oct-2020 con 4,956 boletos). No son "cero visitas medidas": son meses sin operación.
+# - Ene 2017: inicio de la serie, sin registro (descripcion "sd"). feb-2017 (931) es ~4 % de feb-2018 (21,190),
+#   por lo que se marca como registro parcial y no se usa como base interanual.
+# Cualquier total 0 fuera de esta lista queda como "sin_clasificar" y la validación lo reporta.
+TIKAL_MOTIVO_CERO = {**{f'2020-{m:02d}-01': 'cierre_covid19' for m in range(4, 10)},
+                      '2017-01-01': 'sin_registro_inicio_serie'}
+TIKAL_MESES_PARCIALES = ['2017-02-01']
+
+
 def tikal(raw: Path) -> pd.DataFrame:
     df = pd.read_excel(encontrar(raw, 'Visitantes_Tikal_2017-2026.xlsx'), sheet_name='Datos')
     df.columns = df.columns.str.strip()
@@ -126,6 +137,10 @@ def tikal(raw: Path) -> pd.DataFrame:
         raise ValueError('Tikal: el total no coincide con sus componentes')
     result = df[['fecha','nacionales','extranjeros','otros','total']].copy()
     result['advertencia_cero'] = result.total.eq(0)
+    clave = result.fecha.dt.strftime('%Y-%m-%d')
+    result['motivo_cero'] = clave.map(TIKAL_MOTIVO_CERO).where(result.advertencia_cero, '')
+    result.loc[result.advertencia_cero & result.motivo_cero.eq(''), 'motivo_cero'] = 'sin_clasificar'
+    result['registro_parcial'] = clave.isin(TIKAL_MESES_PARCIALES)
     if result.fecha.duplicated().any():
         raise ValueError('Tikal: fechas duplicadas')
     return result.sort_values('fecha').reset_index(drop=True)

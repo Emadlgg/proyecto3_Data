@@ -1,98 +1,138 @@
 # Observatorio de Inteligencia Turística — Tikal y Flores, Petén
 
-Proyecto académico de **Data Science** de la Universidad del Valle de Guatemala. El observatorio integra fuentes de movilidad, visitas a Tikal, actividad del Aeropuerto Internacional Mundo Maya (AIMM), hotelería y migración para apoyar el análisis del destino turístico de Tikal y Flores, Petén.
+Proyecto del curso **CC3084 Data Science** · Universidad del Valle de Guatemala · Semestre II 2026.
+Destino asignado: **Grupo 2 — Tikal y Flores (Petén)**. Reto analítico: **triangulación de tres fuentes independientes** (boletos de Tikal, operaciones y pasajeros del AIMM, y telefonía).
 
-**Responsable:** Osman de León  
-**Repositorio:** https://github.com/Emadlgg/proyecto3_Data.git  
-**Estado:** prototipo funcional en Streamlit; procesamiento, indicadores y pronósticos implementados. Docker, revisión integral de interacciones y memoria técnica final pendientes.
+**Responsable:** Osman de León
+**Repositorio:** https://github.com/Emadlgg/proyecto3_Data.git (privado)
 
-> **Confidencialidad:** las bases institucionales se proporcionaron para uso académico. No publicar microdatos ni archivos originales en repositorios abiertos. Mantener el repositorio privado y compartir acceso únicamente con personas autorizadas por la cátedra. Verificar también los permisos antes de publicar archivos procesados o imágenes Docker.
+> **Confidencialidad.** Las bases institucionales se entregaron solo para uso académico dentro del curso.
+> No se redistribuyen, no se publican en repositorios abiertos y el tablero **no ofrece descargas de datos**.
+> Este repositorio debe permanecer **privado**, con docentes y auxiliares como colaboradores.
+> Los archivos originales y las salidas procesadas están excluidos por `.gitignore` y `.dockerignore`
+> y **nunca se copian dentro de la imagen Docker**: se montan como volúmenes.
 
-## Objetivo
+---
 
-Construir un tablero interactivo para analizar la demanda turística, su comportamiento temporal, la oferta hotelera y las relaciones entre fuentes de información del destino. El tablero distingue datos observados de estimaciones y explica las limitaciones de cada fuente.
+## Contenido
 
-## Funcionalidades implementadas
+1. [Inicio rápido](#inicio-rápido)
+2. [Qué incluye el tablero](#qué-incluye-el-tablero)
+3. [Datos de entrada y cobertura](#datos-de-entrada-y-cobertura)
+4. [Reglas metodológicas](#reglas-metodológicas)
+5. [Estimación de enero–febrero 2026](#estimación-de-eneroferebrero-2026)
+6. [Instalación y ejecución](#instalación-y-ejecución)
+7. [Despliegue con Docker](#despliegue-con-docker)
+8. [Pruebas](#pruebas)
+9. [Estructura del repositorio](#estructura-del-repositorio)
+10. [Stack tecnológico](#stack-tecnológico)
+11. [Pipeline MLOps (opcional)](#pipeline-mlops-opcional)
+12. [Estado y pendientes](#estado-y-pendientes)
 
-La aplicación en **Python + Streamlit + Plotly** está organizada en cuatro módulos:
+---
+
+## Inicio rápido
+
+Requisitos: **Docker** con Docker Compose y los archivos originales proporcionados por la cátedra.
+
+```bash
+# 1. Colocar los 10 archivos originales en data/raw/ (ver lista en "Datos de entrada")
+
+# 2. Generar los datos procesados (ETL + validación + indicadores + estimaciones)
+docker compose --profile tools run --rm etl
+
+# 3. Levantar el tablero
+docker compose up --build dashboard
+```
+
+Abrir **http://localhost:8501**. Para detenerlo: `docker compose down`.
+
+Si `data/processed/` ya existe, basta con el paso 3.
+
+---
+
+## Qué incluye el tablero
+
+Aplicación **Streamlit + Plotly** con cuatro módulos obligatorios y una página complementaria.
+En los módulos 1 a 4, una gráfica principal permite seleccionar puntos o barras y actualiza las demás vistas del mismo módulo (visualizaciones vinculadas).
 
 | Módulo | Contenido |
 |---|---|
-| **1. Demanda turística** | Visitantes por subdestino, estadía media ponderada, turistas y excursionistas, indicadores de composición. |
-| **2. Temporalidad y predicciones** | Presencia diaria, patrones semanales, eventos, estimaciones de enero y febrero de 2026, métricas MAE y RMSE. |
-| **3. Oferta hotelera** | Ocupación mensual, inventario de establecimientos, habitaciones y plazas cama, comparaciones en períodos coincidentes. |
-| **4. Monitor especializado de Petén** | Comparación entre boletos de Tikal, pasajeros y operaciones del AIMM y movilidad por telefonía. |
+| **Inicio** | Panorama de movilidad por polígono (Isla de Flores, El Remate, Aeropuerto Mundo Maya) y acceso a los módulos. |
+| **1. Demanda** (`1_Demanda.py`) | KPIs (visitantes promedio por mes, días-persona, estadía media ponderada), segmentación turista/excursionista, comparación de polígonos y **Top 10 de mercados emisores** (extranjeros), con nacionales y extranjeros por separado. Selección de barra → actualiza composición y estadía del mes. |
+| **2. Temporalidad** (`2_Temporalidad.py`) | Serie diaria con selector de eventos, **lift** de cada festividad frente a un día regular del mismo día de semana, patrón semanal y fin de semana vs. días hábiles, **estimación de ene–feb 2026** con validación (MAE, RMSE, MAPE) y estado de publicación MLOps. |
+| **3. Hotelería** (`3_Hoteleria.py`) | Ocupación mensual 2023–2025, capacidad instalada anual 2022–2025 (establecimientos, habitaciones, plazas cama), **cruce ocupación–afluencia en la ventana sep–dic 2025** (boletos de Tikal o telefonía por polígono) y comparación territorial de polígonos sin sumarlos. |
+| **4. Monitor de Petén** (`4_Monitor_Peten.py`) | Reto del destino: triangulación de Tikal, AIMM y telefonía con índices base 100, variaciones mensuales entre meses consecutivos, **cobertura y concordancia entre fuentes** (correlación y coincidencia de dirección en meses comunes), boletos de Tikal y AIMM (pasajeros y operaciones en gráficas separadas). |
+| **5. Perfil del visitante** (`5_Perfil_Visitante.py`) | Encuesta de visitantes 2025 en porcentajes muestrales, sin expansión poblacional. |
 
-Las páginas cuentan con filtros, gráficos interactivos y explicaciones. **La vinculación directa de al menos tres visualizaciones mediante selección en las propias gráficas aún requiere revisión funcional**; compartir filtros no equivale por sí solo a tener gráficas enlazadas.
+### Paleta de color
 
-## Estructura del repositorio
+Documentada en [`docs/paleta_color.md`](docs/paleta_color.md) y definida en `src/ui/paleta.py`.
+Principio central: **lo observado es azul sólido y lo estimado es terracota punteado y etiquetado «Estimación»**; ese color no se usa para nada más.
 
-```text
-proyecto3_Data/
-├── app.py                       # Página principal de Streamlit
-├── pages/
-│   ├── 1_Demanda.py
-│   ├── 2_Temporalidad.py
-│   ├── 3_Hoteleria.py
-│   └── 4_Monitor_Peten.py
-├── src/
-│   ├── __init__.py
-│   ├── etl.py                    # Lectura y normalización de fuentes
-│   ├── validaciones.py           # Auditoría de calidad y reporte JSON
-│   ├── indicadores.py            # Cálculo de indicadores turísticos
-│   ├── predicciones.py           # Estimaciones y evaluación retrospectiva
-│   ├── visualizaciones.py        # Gráficas del módulo de demanda
-│   └── visualizaciones_extra.py  # Funciones de otros módulos
-├── notebooks/
-│   ├── 01_exploracion.ipynb
-│   ├── 02_limpieza_validacion.ipynb
-│   ├── 03_indicadores.ipynb
-│   └── 04_predicciones.ipynb
-├── data/
-│   ├── raw/                     # Fuentes originales (no publicar)
-│   └── processed/
-│       ├── indicadores/         # Indicadores derivados
-│       └── predicciones/        # Estimaciones y métricas
-├── tests/
-│   ├── test_etl.py
-│   ├── test_validaciones.py
-│   ├── test_indicadores.py
-│   ├── test_predicciones.py
-│   ├── test_visualizaciones.py
-│   └── test_modulos_234.py
-├── docs/                        # Reportes y documentación
-├── requirements.txt
-├── .gitignore
-└── README.md
-```
+---
 
-La estructura muestra los archivos desarrollados hasta esta etapa. Los archivos locales de datos no necesariamente forman parte del repositorio remoto.
+## Datos de entrada y cobertura
 
-## Fuentes de datos
+Los originales se colocan en `data/raw/` (solo lectura; el código nunca los modifica):
 
-Se utilizan, según disponibilidad y permisos, los siguientes conjuntos de datos:
+| Archivo | Uso |
+|---|---|
+| `BD_moviidad_mensual.xlsx` | Telefonía mensual por polígono y segmento; mercados emisores |
+| `BD_moviidad_diario.xlsx` | Presencia diaria por polígono y tipo de día |
+| `Visitantes_Tikal_2017-2026.xlsx` | Boletos de ingreso a Tikal |
+| `AIMM_Consolidado_2022-2025.xlsx`, `AIMM_Aerolineas_2023-2026.xlsx` | Pasajeros del aeropuerto |
+| `AIMM_Operaciones_Aeronauticas_2022-2026.xlsx` | Operaciones aéreas (no son personas) |
+| `indice_ocupacion_mensual_2023_2025_1.csv` | Ocupación hotelera departamental |
+| `oferta_hotelera_2022_2026.csv` | Inventario de establecimientos, habitaciones y plazas cama |
+| `Base_Migracion_2009-2026jun.xlsx` | Migración nacional: perfil estacional y referencia de la estimación |
+| `Encuesta_visitante_Peten_2025.xlsx` | Perfil y satisfacción (módulo 5) |
 
-- **Movilidad por telefonía:** bases mensuales y diarias para Petén, con subdestinos como Isla de Flores, El Remate y el polígono del Aeropuerto Mundo Maya.
-- **Visitantes de Tikal:** boletos de ingreso por mes y categoría.
-- **AIMM:** pasajeros por flujo y tipo, así como operaciones aeronáuticas.
-- **Hotelería:** ocupación mensual e inventarios de establecimientos, habitaciones y plazas cama.
-- **Migración nacional:** `Base_Migracion_2009-2026jun.xlsx`, utilizada como referencia de estacionalidad.
+Cobertura temporal tras el procesamiento:
 
-Las encuestas de visitantes y residentes y la base complementaria podrán incorporarse en ampliaciones posteriores, previa validación de su alcance y uso autorizado.
+| Fuente | Cobertura | Observación |
+|---|---|---|
+| Telefonía mensual | sep 2025 – ago 2026 | **Sin cobertura en ene–feb 2026** |
+| Telefonía diaria | abr 2025 – sep 2026 | Con huecos (p. ej. abr–ago 2025 y ene–feb 2026) |
+| Boletos de Tikal | ene 2017 – ago 2026 | Siete meses con total cero: abr–sep 2020 (cierre del parque por COVID-19) y ene 2017 (inicio de serie, sin registro). Se tratan como «sin dato»; feb 2017 es registro parcial |
+| AIMM | ene 2022 – abr 2026 | |
+| Ocupación hotelera | ene 2023 – dic 2025 | Serie continua |
+| Inventario hotelero | 2022 – 2025 (corte al 4.º trimestre) + 2026 (1.º trimestre parcial) | 2026 no se compara con años completos |
 
-### Reglas metodológicas importantes
+---
 
-- **No sumar subdestinos** de telefonía para obtener visitantes únicos de Petén: una misma persona puede aparecer en más de un polígono.
-- **No sumar presencias diarias** para estimar visitantes únicos mensuales.
-- Calcular la **estadía media ponderada** como días-persona / visitantes, únicamente para el segmento con pernocta (mayor a un día).
-- Los meses sin cobertura telefónica **no son ceros**; las estimaciones deben identificarse como tales.
-- **Boletos de Tikal, pasajeros del AIMM y telefonía** tienen universos y unidades diferentes; no deben sumarse ni equipararse directamente.
-- Los inventarios hoteleros representan **cortes de capacidad**, no flujos acumulables. Los datos parciales de 2026 no deben anualizarse sin justificación.
-- Los siete meses con cero registrados en la serie de Tikal requieren confirmación de su significado antes de interpretar sus causas.
+## Reglas metodológicas
 
-## Instalación y ejecución local
+Las seis reglas de la guía del proyecto están aplicadas y cubiertas por pruebas automáticas:
 
-Se recomienda **Python 3.12**. Desde la raíz del proyecto:
+1. **Ausencia de dato no es cero.** Los meses sin cobertura se muestran como hueco («Sin dato»); las líneas se cortan en lugar de unir puntos vecinos (`completar_calendario`).
+2. **No se promedia la permanencia promedio.** La estadía media es `suma de días-persona / suma de visitantes`, solo sobre el segmento «mayor a 1 día».
+3. **No se suma la base diaria para obtener el mes.** La serie diaria solo se resume con medias y comparaciones.
+4. **No se suman subdestinos.** Cada polígono se interpreta por separado: un visitante puede aparecer en más de uno.
+5. **No se mezclan aeronaves con personas.** Operaciones y pasajeros van en gráficas independientes.
+6. **No se extrapolan encuestas.** Se reportan como porcentajes de la muestra, recalculando la base válida en cada agregación.
+
+Reglas adicionales: boletos de Tikal, pasajeros del AIMM y telefonía son universos distintos (solo se comparan variaciones relativas); los inventarios hoteleros son cortes de capacidad, no flujos; y los datos de 2026 no se anualizan.
+
+---
+
+## Estimación de enero–febrero 2026
+
+La telefonía no tiene cobertura en esos dos meses, pero sí antes (sep–dic 2025) y después (mar–ago 2026).
+
+- **Método principal.** `visitantes(t) = factor_reparto(t) × migración_nacional(t)`. El factor de reparto (visitantes del polígono ÷ migración nacional, de `Base_Migracion`) se interpola entre dic 2025 y mar 2026.
+- **Alternativa con perfil estacional.** Usa el perfil estacional de migración en lugar de la migración observada. Se conserva en el tablero como línea tenue. Sobrestimó la migración nacional de ene–feb 2026 en 39 % y 46 %, y por eso no es el método principal.
+- **Validación.** Se ocultan dos meses consecutivos con vecinos observados en ambos lados, se reconstruyen y se miden MAE, RMSE y MAPE. La muestra es pequeña (2 ventanas × 6 grupos × 2 meses), así que los resultados son indicativos.
+- **Resultado de la corrida del 11-nov-2026.** El método principal obtuvo MAPE 6.4 %; la interpolación lineal de referencia, que no usa migración, 6.0 %. El tablero lo muestra en una nota de transparencia. Detalle en `data/processed/predicciones/backtest_imputacion_resumen.csv`.
+- **Etiquetado.** Toda cifra estimada se rotula **«Estimación»** y usa el color terracota, separado de lo observado.
+
+---
+
+## Instalación y ejecución
+
+Se recomienda **Python 3.12**.
+
+**Windows (PowerShell)**
 
 ```powershell
 python -m venv .venv
@@ -100,65 +140,155 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-Colocar los archivos originales autorizados en `data/raw/` respetando los nombres y estructura esperados por `src/etl.py`. Ejecutar el procesamiento en este orden:
+**Linux / macOS**
 
-```powershell
-python -m src.etl
-python -m src.validaciones
-python -m src.indicadores
-python -m src.predicciones
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
-Las salidas se generan en `data/processed/` y sus subcarpetas. El validador también genera `docs/reporte_validacion.json`. **No subir estas salidas al repositorio sin confirmar que su publicación esté autorizada.**
+Con los originales en `data/raw/`, ejecutar el procesamiento **en este orden**:
+
+```bash
+python -m src.etl                 # lectura y normalización de las fuentes
+python -m src.validaciones        # auditoría de calidad → docs/reporte_validacion.json
+python -m src.indicadores         # indicadores reutilizables
+python -m src.mercados_emisores   # Top de nacionalidades por polígono
+python -m src.predicciones        # método base y perfil estacional nacional
+python -m src.imputacion          # estimación ene–feb 2026 + backtest
+python -m src.encuestas           # perfil y satisfacción (muestral)
+```
 
 Iniciar el tablero:
 
-```powershell
+```bash
 python -m streamlit run app.py
 ```
 
-Abrir **http://localhost:8501** en el navegador.
+Abrir **http://localhost:8501**. Los notebooks de `notebooks/` documentan cada etapa (exploración, limpieza, indicadores, predicciones, encuestas y diagnóstico de modelos); se abren con JupyterLab o VS Code usando el entorno `.venv`.
 
-Para trabajar con los notebooks, abrir `notebooks/` en VS Code o JupyterLab y seleccionar el intérprete del entorno `.venv`.
+---
 
-## Flujo reproducible
+## Despliegue con Docker
 
-1. **Exploración:** `01_exploracion.ipynb` identifica fuentes, columnas, cobertura temporal y problemas iniciales.
-2. **ETL:** `src/etl.py` transforma las fuentes sin sobrescribir los originales.
-3. **Validación:** `src/validaciones.py` revisa archivos, rangos, claves y reglas de negocio; `02_limpieza_validacion.ipynb` documenta los hallazgos.
-4. **Indicadores:** `src/indicadores.py` genera indicadores reutilizables; `03_indicadores.ipynb` presenta y examina resultados.
-5. **Predicciones:** `src/predicciones.py` calcula estimaciones de enero-febrero de 2026 por subdestino y segmento, utilizando estacionalidad nacional y factores de reparto observados. `04_predicciones.ipynb` muestra metodología, resultados y validación retrospectiva.
-6. **Visualización:** Streamlit consume los CSV procesados y permite explorar los resultados en cuatro módulos.
+La solución está contenerizada. La imagen contiene solo el código; **los datos se montan como volúmenes**.
 
-### Predicciones y limitaciones
+| Servicio | Perfil | Función |
+|---|---|---|
+| `dashboard` | (por defecto) | Tablero en `http://localhost:8501`, con `data/processed` y `artifacts` montados **solo lectura** |
+| `etl` | `tools` | Ejecuta todo el procesamiento; `data/raw` se monta **solo lectura** |
+| `mlflow` | `tools` | Servidor de seguimiento de experimentos (puerto 5000) |
+| `pipeline` | `tools` | Pipeline MLOps con evaluación y publicación controlada |
 
-Las predicciones de enero y febrero de 2026 se etiquetan como **estimaciones**, no como observaciones. La evaluación retrospectiva calcula **MAE y RMSE** en meses observados. Los resultados son exploratorios, dependen de los supuestos de estacionalidad y reparto, y **no representan un total único de visitantes de Petén**.
+Comandos habituales:
 
-## Pruebas y estado de validación
+```bash
+docker compose --profile tools run --rm etl      # genera data/processed
+docker compose up --build dashboard              # inicia el tablero
+docker compose down                              # detiene los servicios
+```
 
-Ejecutar:
+**Dos imágenes.** Por defecto se instalan solo las dependencias del tablero y del ETL (`requirements-app.txt`, imagen ligera). Los servicios `mlflow` y `pipeline` se construyen con `requirements.txt` completo.
 
-```powershell
+**Instalación en un servidor.**
+
+1. Instalar Docker y Docker Compose.
+2. Clonar el repositorio privado y copiar los originales a `data/raw/` por un canal autorizado.
+3. Ejecutar el ETL y levantar el tablero con los dos comandos anteriores. El contenedor tiene `HEALTHCHECK` y `restart: unless-stopped`.
+4. Por seguridad, los puertos están publicados únicamente en `127.0.0.1`. Para acceso externo, colocar un proxy inverso (por ejemplo Nginx o Caddy) con HTTPS y autenticación, en lugar de abrir el puerto directamente.
+
+---
+
+## Pruebas
+
+```bash
 python -m pytest -v
 ```
 
-**Última ejecución reportada (26 de octubre de 2026): 54 pruebas aprobadas en 1.27 s.** Cubren existencia y lectura de archivos, duplicados exactos, reglas de Tikal, ocupación, indicadores, predicciones y funciones de visualización. La aplicación también inició localmente en el puerto 8501.
+Cubren lectura y calidad de las fuentes, reglas de negocio (estadía ponderada, subdestinos, huecos, cortes de inventario, ventana sep–dic 2025), indicadores, estimación y backtest, triangulación y la política de no descarga de datos. Las funciones puras se prueban sin ejecutar Streamlit.
 
-Las pruebas automáticas no sustituyen la inspección visual de las cuatro páginas ni la revisión de todos los supuestos estadísticos. Durante la ejecución se observaron avisos de Streamlit por el uso de `use_container_width`; se recomienda sustituirlo por `width="stretch"` en los componentes correspondientes.
+---
 
-## Pendientes antes de la entrega final
+## Estructura del repositorio
 
-- Verificar en el navegador los cuatro módulos, filtros y estados sin datos.
-- Confirmar que **al menos tres visualizaciones estén vinculadas directamente** mediante interacciones.
-- Revisar la precisión y limitaciones de los pronósticos y documentar hallazgos respaldados por evidencia.
-- Resolver o documentar la interpretación de los meses con cero en Tikal.
-- Preparar `Dockerfile` y `.dockerignore`, con una estrategia segura para proporcionar datos sin publicarlos en la imagen.
-- Completar la memoria técnica y metodológica: arquitectura, catálogo de indicadores, fórmulas, fuentes, validación, limitaciones y recomendaciones para INGUAT.
+```text
+proyecto3_Data/
+├── app.py                       # Inicio del tablero
+├── pages/                       # Módulos 1–4 y perfil del visitante
+├── src/
+│   ├── etl.py                   # Lectura y normalización de las fuentes
+│   ├── validaciones.py          # Auditoría de calidad
+│   ├── indicadores.py           # Indicadores turísticos
+│   ├── mercados_emisores.py     # Top de nacionalidades por polígono
+│   ├── predicciones.py          # Método base y perfil estacional
+│   ├── imputacion.py            # Estimación ene–feb 2026 y backtest
+│   ├── triangulacion.py         # Cobertura y concordancia entre fuentes
+│   ├── encuestas.py             # Perfil y satisfacción muestral
+│   ├── visualizaciones*.py      # Gráficas y funciones de los módulos
+│   ├── ui/                      # Paleta, estilos, componentes y utilidades del tablero
+│   └── pipeline.py, evaluacion*.py, optimizacion*.py, publicacion.py,
+│       monitoreo.py, mlflow_tracking.py   # MLOps y diagnóstico de modelos
+├── config/mlops.json            # Parámetros y umbrales del pipeline
+├── notebooks/                   # 01 exploración … 06 diagnóstico de modelos
+├── tests/                       # Pruebas automáticas
+├── data/
+│   ├── raw/                     # Originales (no se versionan)
+│   └── processed/               # Salidas del ETL (no se versionan)
+├── artifacts/                   # Corridas y evidencia del pipeline (no se versiona)
+├── docs/                        # Paleta de color y reporte de validación
+├── labs/                        # Entregas de laboratorios 10, 11 y 12
+├── scripts/organizar_proyecto.py
+├── Dockerfile · compose.yaml · .dockerignore
+├── requirements.txt             # Desarrollo completo
+├── requirements-app.txt         # Solo tablero y ETL (imagen Docker)
+└── .streamlit/config.toml       # Tema visual
+```
 
-## Tecnologías
+`labs/` contiene informes y material de laboratorios anteriores y **no forma parte del tablero**. Si se conserva en el repositorio, verificar que `labs/lab12_powerbi/powerbi/*.pbix` no incluya datos institucionales importados.
 
-Python, Pandas, NumPy, OpenPyXL, Streamlit, Plotly, Jupyter, scikit-learn / statsmodels (según análisis), Pytest. Docker está planificado para la fase de despliegue.
+---
+
+## Stack tecnológico
+
+Todo el proyecto usa herramientas **de código abierto y gratuitas**, sin herramientas comerciales propietarias.
+
+| Componente | Herramienta | Motivo |
+|---|---|---|
+| Procesamiento y estimación | Python 3.12, pandas, NumPy, OpenPyXL | Lectura de Excel/CSV, transformaciones reproducibles y estimación con métodos propios (interpolación del factor de reparto) |
+| Tablero | Streamlit | Interacción por selección de puntos con poco código; una sola base Python para ETL y visualización |
+| Gráficas | Plotly | Gráficas interactivas y responsivas |
+| Despliegue | Docker y Docker Compose | Entorno reproducible para calificar y desplegar |
+| Seguimiento | MLflow | Trazabilidad de corridas de evaluación |
+| Calidad | pytest | Pruebas de reglas metodológicas |
+| Notebooks | Jupyter | Documentación de cada etapa del análisis |
+
+La justificación ampliada del stack está en la Memoria Técnica.
+
+---
+
+## Pipeline MLOps (opcional)
+
+Parte del laboratorio 11. Evalúa un candidato de estimación con *rolling origin* (oct–dic 2025, sin información futura), lo compara con una referencia y **publica solo si cumple umbrales fijados de antemano**: razón de MAE ≤ 1.0 respecto a la referencia y nMAE ≤ 0.35 (`config/mlops.json`).
+
+```bash
+docker compose --profile tools up -d mlflow       # http://localhost:5000
+docker compose --profile tools run --rm pipeline
+python -m src.monitoreo --data data/processed --config config/mlops.json
+```
+
+**Estado actual.** La última ejecución rechazó al candidato (razón de MAE 1.86 > 1.0), por lo que **no hay versión oficial publicada**. El pipeline evalúa el método anterior (factor mediano × perfil estacional). Las estimaciones que muestra el módulo 2 provienen de `src.imputacion`, validada con su propio backtest, y se presentan siempre como exploratorias.
+
+---
+
+## Limitaciones conocidas
+
+- Telefonía sin cobertura en ene–feb 2026; no hay comparación interanual directa entre 2025 y 2026.
+- Las estimaciones tienen validación sobre pocas observaciones y no representan un total único de visitantes de Petén.
+- Los datos hoteleros de 2026 son parciales (primer trimestre) y repiten valores de 2025 en parte de las combinaciones.
+- El AIMM llega hasta abril de 2026; por eso la triangulación de tres fuentes cubre solo seis meses comunes.
+- Las encuestas no tienen factor de expansión: sus porcentajes no se extrapolan a totales.
 
 ## Autoría y uso
 
-Desarrollo académico individual: **Osman de León**. Universidad del Valle de Guatemala, 2026. Material de uso académico sujeto a las restricciones de confidencialidad establecidas por la cátedra y las instituciones proveedoras de datos.
+Desarrollo académico: **Osman de León**. Universidad del Valle de Guatemala, 2026.
+Material de uso académico, sujeto a las restricciones de confidencialidad de la cátedra y de las instituciones proveedoras de datos.

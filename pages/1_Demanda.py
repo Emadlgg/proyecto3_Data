@@ -5,7 +5,7 @@ import streamlit as st
 from src.ui.estilos import aplicar_estilos
 from src.ui.componentes import encabezado, aviso_metodologico
 from src.ui.graficas import aplicar_tema
-from src.ui.analitica import cargar, datos_disponibles, detalle_mes
+from src.ui.analitica import cargar, datos_disponibles, detalle_mes, consumir_seleccion
 from src.mercados_emisores import top_mercados
 
 st.set_page_config(page_title='Demanda | Peten', layout='wide')
@@ -60,14 +60,18 @@ fig1 = px.bar(serie, x='fecha', y='visitantes', labels={'fecha':'Mes','visitante
 fig1.update_traces(selected=dict(marker=dict(opacity=1)), unselected=dict(marker=dict(opacity=.35)))
 evento = st.plotly_chart(aplicar_tema(fig1, 'Evolucion del subdestino'), width='stretch', on_select='rerun', selection_mode='points', key='dem_evolucion')
 points = getattr(getattr(evento, 'selection', None), 'points', []) or []
+clic = None
 if points:
     try:
-        nuevo = pd.Timestamp(points[0]['x']).normalize()
-        if nuevo in fechas and nuevo != mes:
-            st.session_state['dem_mes_pendiente'] = nuevo
-            st.rerun()
+        clic = pd.Timestamp(points[0]['x']).normalize()
     except (ValueError, TypeError, KeyError):
-        pass
+        clic = None
+# La selección de la gráfica persiste entre ejecuciones: se aplica solo cuando es nueva.
+# Si se reaplicara siempre, pisaría el mes elegido luego en la barra lateral.
+nuevo = consumir_seleccion(st.session_state, 'dem_sel_procesada', clic)
+if nuevo is not None and nuevo in fechas and nuevo != mes:
+    st.session_state['dem_mes_pendiente'] = nuevo
+    st.rerun()
 st.caption('Seleccionar una barra actualiza la composicion y la estadia del mes.')
 left,right = st.columns(2)
 with left:

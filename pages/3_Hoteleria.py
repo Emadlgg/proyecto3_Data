@@ -4,10 +4,10 @@ import plotly.express as px
 import streamlit as st
 
 from src.ui.estilos import aplicar_estilos
-from src.ui.componentes import encabezado
+from src.ui.componentes import encabezado, tabla_segura
 from src.ui.graficas import aplicar_tema
 from src.ui.paleta import PRIMARIO, ACENTO
-from src.ui.analitica import cargar, datos_disponibles
+from src.ui.analitica import cargar, datos_disponibles, completar_calendario
 from src.visualizaciones_extra import ocupacion_y_afluencia
 
 st.set_page_config(page_title="Hotelería | Petén", layout="wide")
@@ -86,9 +86,11 @@ if d.empty:
 else:
     ultimo = d.iloc[-1]
     st.metric("Última ocupación del período seleccionado", f"{ultimo.ocupacion_pct:.1f}%")
-    fig = px.line(d, x="fecha", y="ocupacion_pct", markers=True,
+    # Si se omite un año intermedio, la serie se corta en lugar de unir los años con una recta.
+    dplot = completar_calendario(d)
+    fig = px.line(dplot, x="fecha", y="ocupacion_pct", markers=True,
                   labels={"fecha": "Mes", "ocupacion_pct": "Ocupación (%)"})
-    fig.update_traces(line_color=PRIMARIO, marker=dict(size=9, color=PRIMARIO))
+    fig.update_traces(line_color=PRIMARIO, marker=dict(size=9, color=PRIMARIO), connectgaps=False)
     fig.update_yaxes(range=[0, 100])
     sel_ocup = st.plotly_chart(aplicar_tema(fig, "Evolución mensual de la ocupación (selecciona un mes)"),
                                width="stretch", on_select="rerun", selection_mode="points",
@@ -127,31 +129,48 @@ else:
     st.plotly_chart(aplicar_tema(fig, f"{metrica.replace('_', ' ').capitalize()} por año y tipo"), width="stretch")
     st.caption("La suma entre tipos corresponde solo al inventario del mismo corte anual; verificar comparabilidad de cortes.")
     with st.expander("Ver inventario anual"):
-        st.dataframe(inventario[["anio", "tipo_alojamiento", metrica]], hide_index=True, width="stretch")
+        tabla_segura(inventario[["anio", "tipo_alojamiento", metrica]], hide_index=True, width="stretch")
 st.info("Los registros de 2026 son parciales y no se incluyen en la comparación anual 2022–2025.")
 
 st.divider()
 st.subheader("Ocupación y afluencia · ventana coincidente sep–dic 2025")
+opciones_afluencia = []
 if datos_disponibles(tik, ["fecha", "total"]):
-    cruce = ocupacion_y_afluencia(ocup, tik)
+    opciones_afluencia.append("Boletos de Tikal")
+if datos_disponibles(mov, ["fecha", "subdestino", "visitantes"]):
+    opciones_afluencia.append("Telefonía (un polígono)")
+if not opciones_afluencia:
+    st.info("No hay indicadores de afluencia para realizar el cruce.")
+else:
+    medida = st.radio("Medida de afluencia", opciones_afluencia, horizontal=True, key="hot_afluencia")
+    if medida == "Boletos de Tikal":
+        cruce = ocupacion_y_afluencia(ocup, tik, columna="total", nombre="afluencia")
+        etiqueta = "Boletos Tikal"
+    else:
+        poligono = st.selectbox("Polígono de telefonía", sorted(mov.subdestino.dropna().unique().tolist()),
+                                key="hot_poligono_cruce")
+        base = mov.loc[mov.subdestino.eq(poligono), ["fecha", "visitantes"]].copy()
+        base["fecha"] = pd.to_datetime(base["fecha"], errors="coerce")
+        cruce = ocupacion_y_afluencia(ocup, base, columna="visitantes", nombre="afluencia")
+        etiqueta = f"Visitantes · {poligono}"
     if cruce.empty:
         st.info("No hay meses coincidentes para este cruce.")
     else:
         cruce = cruce.copy()
         cruce["mes_etiqueta"] = pd.to_datetime(cruce["fecha"]).dt.strftime("%Y-%m")
         fig = px.scatter(
-            cruce, x="boletos_tikal", y="ocupacion_pct", text="mes_etiqueta",
+            cruce, x="afluencia", y="ocupacion_pct", text="mes_etiqueta",
             hover_data={"mes_etiqueta": True, "fecha": False},
-            labels={"boletos_tikal": "Boletos Tikal", "ocupacion_pct": "Ocupación (%)"},
+            labels={"afluencia": etiqueta, "ocupacion_pct": "Ocupación (%)"},
         )
         colores = [ACENTO if (mes_foco is not None and pd.Timestamp(f) == pd.Timestamp(mes_foco)) else PRIMARIO
                    for f in cruce["fecha"]]
         fig.update_traces(textposition="top center", marker=dict(size=13, color=colores))
         fig.update_layout(margin=dict(t=75, b=50))
-        st.plotly_chart(aplicar_tema(fig, "Boletos Tikal y ocupación hotelera (cuatro meses)"), width="stretch")
-        st.caption("Comparación descriptiva: boletos de Tikal y ocupación hotelera miden universos diferentes. No demuestra causalidad.")
-else:
-    st.info("No hay indicadores de Tikal para realizar el cruce.")
+        st.plotly_chart(aplicar_tema(fig, f"{etiqueta} y ocupación hotelera (cuatro meses)"), width="stretch")
+        st.caption("Comparación descriptiva en la ventana sep–dic 2025: la afluencia y la ocupación hotelera "
+                   "miden universos diferentes (boletos o movilidad frente a ocupación departamental). "
+                   "Con cuatro meses no demuestra causalidad.")
 
 st.divider()
 st.subheader("Comparación territorial · polígonos individuales")

@@ -51,7 +51,9 @@
         "extranjeros",
         "otros",
         "total",
-        "advertencia_cero"
+        "advertencia_cero",
+        "motivo_cero",
+        "registro_parcial"
       ],
       "duplicados_exactos": 0,
       "nulos_por_columna": {
@@ -60,7 +62,9 @@
         "extranjeros": 0,
         "otros": 0,
         "total": 0,
-        "advertencia_cero": 0
+        "advertencia_cero": 0,
+        "motivo_cero": 109,
+        "registro_parcial": 0
       },
       "fechas_invalidas": 0,
       "fecha_min": "2017-01-01",
@@ -176,7 +180,6 @@
   },
   "errores": [],
   "advertencias": [
-    "Tikal: 7 meses con cero; confirmar cierre o ausencia de datos",
     "Oferta hotelera: interpretar cortes como inventario, no sumar trimestres ni anualizar 2026 parcial"
   ],
   "notas_metodologicas": [
@@ -196,6 +199,15 @@
     "2020-08-01",
     "2020-09-01"
   ],
+  "ceros_tikal_motivo": {
+    "2017-01-01": "sin_registro_inicio_serie",
+    "2020-04-01": "cierre_covid19",
+    "2020-05-01": "cierre_covid19",
+    "2020-06-01": "cierre_covid19",
+    "2020-07-01": "cierre_covid19",
+    "2020-08-01": "cierre_covid19",
+    "2020-09-01": "cierre_covid19"
+  },
   "meses_comparacion": [
     "2025-09-01",
     "2025-10-01",

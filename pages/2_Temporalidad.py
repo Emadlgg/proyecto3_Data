@@ -4,10 +4,11 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 from src.ui.estilos import aplicar_estilos
-from src.ui.componentes import encabezado
+from src.ui.componentes import encabezado, tabla_segura
 from src.ui.graficas import aplicar_tema
 from src.ui.paleta import PRIMARIO, ESTIMACION, ACENTO, NEUTRO, NEUTRO_CLARO
-from src.ui.analitica import cargar, datos_disponibles, version_aprobada, ultimo_candidato
+from src.ui.analitica import (cargar, datos_disponibles, version_aprobada, ultimo_candidato,
+                              completar_calendario)
 from src.visualizaciones_extra import (serie_diaria, lift_eventos, lift_por_evento,
                                        fin_de_semana_vs_habiles)
 
@@ -47,7 +48,10 @@ else:
     daily = (d.groupby(['fecha', 'evento'], as_index=False).presencias_diarias.sum()
              .sort_values('fecha'))
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=daily.fecha, y=daily.presencias_diarias, mode='lines',
+    # Línea de apoyo con calendario diario completo: los días sin telefonía quedan como hueco
+    # (sin dato), no como una recta que sugiera observaciones inexistentes.
+    linea = completar_calendario(daily.groupby('fecha', as_index=False).presencias_diarias.sum(), freq='D')
+    fig.add_trace(go.Scatter(x=linea.fecha, y=linea.presencias_diarias, mode='lines', connectgaps=False,
                              line=dict(color=NEUTRO_CLARO, width=1.5), hoverinfo='skip',
                              showlegend=False))
     for ev, g in daily.groupby('evento'):
@@ -112,7 +116,7 @@ else:
         with st.expander('Ver lift por fecha'):
             ld = lift_eventos(d)
             ld = ld.loc[ld.lift_pct.notna(), ['fecha', 'evento', 'presencias_diarias', 'referencia', 'lift_pct']]
-            st.dataframe(ld.sort_values('fecha'), hide_index=True, width='stretch')
+            tabla_segura(ld.sort_values('fecha'), hide_index=True, width='stretch')
 
 st.divider()
 st.subheader('2. Imputación obligatoria: enero–febrero 2026 (sin cobertura de telefonía)')
@@ -164,6 +168,13 @@ if datos_disponibles(bt_res, ['metodo', 'MAE', 'RMSE', 'MAPE', 'n']):
         c1.metric('MAPE', f"{f0.MAPE:.1f}%", help='Error porcentual absoluto medio, todos los grupos.')
         c2.metric('MAE', f"{f0.MAE:,.0f}", help='Error absoluto medio en visitantes.')
         c3.metric('RMSE', f"{f0.RMSE:,.0f}", help='Raíz del error cuadrático medio, en visitantes.')
+        mejor = bt_res.sort_values('MAPE').iloc[0]
+        if str(mejor['tipo']).startswith('Referencia'):
+            st.info(f"Transparencia: en esta validación, la referencia «{mejor['etiqueta']}» (sin migración) "
+                    f"obtuvo MAPE {mejor['MAPE']:.1f}% frente a {f0.MAPE:.1f}% del método principal. "
+                    'La diferencia es pequeña y la muestra reducida, por lo que no prueba que ninguno sea superior. '
+                    'Se mantiene el método principal porque incorpora la señal de migración de Base_Migracion '
+                    'y reproduce la forma mensual de enero frente a febrero en lugar de una recta.')
     mg = bt_det.loc[bt_det.metodo.eq('interpolado_observada') & bt_det.subdestino.eq(sub)
                     & bt_det.segmento.eq(seg)] if datos_disponibles(bt_det, ['metodo', 'subdestino', 'segmento']) else pd.DataFrame()
     if not mg.empty:
@@ -172,7 +183,7 @@ if datos_disponibles(bt_res, ['metodo', 'MAE', 'RMSE', 'MAPE', 'n']):
     with st.expander('Comparación de métodos en la validación'):
         tabla = bt_res[['etiqueta', 'tipo', 'MAE', 'RMSE', 'MAPE', 'n']].rename(
             columns={'etiqueta': 'Método', 'tipo': 'Tipo', 'n': 'Observaciones'})
-        st.dataframe(tabla.round(1), hide_index=True, width='stretch')
+        tabla_segura(tabla.round(1), hide_index=True, width='stretch')
         st.caption('Muestra pequeña (2 ventanas × 6 grupos × 2 meses): interpretar como evidencia indicativa. '
                    'Las "referencias" no usan migración y sirven solo de comparación.')
 if datos_disponibles(perf_nac, ['fecha', 'migracion_nacional_estimada', 'viajeros_nacionales', 'error_pct']):
@@ -181,7 +192,7 @@ if datos_disponibles(perf_nac, ['fecha', 'migracion_nacional_estimada', 'viajero
             ['mes', 'migracion_nacional_estimada', 'viajeros_nacionales', 'error_pct']].rename(columns={
                 'mes': 'Mes', 'migracion_nacional_estimada': 'Perfil estacional (estimado)',
                 'viajeros_nacionales': 'Migración observada', 'error_pct': 'Error (%)'})
-        st.dataframe(t.round(1), hide_index=True, width='stretch')
+        tabla_segura(t.round(1), hide_index=True, width='stretch')
         st.caption('El perfil 2017–2024 sobrestimó la migración nacional de ene–feb 2026; por eso el método '
                    'principal usa la migración observada y deja el perfil como alternativa.')
 
@@ -222,7 +233,7 @@ else:
             if not requeridas.issubset(aprobado.columns):
                 st.error('La versión aprobada no tiene el esquema esperado.')
             else:
-                st.dataframe(aprobado.loc[aprobado.subdestino.eq(sub) & aprobado.segmento.eq(seg)], hide_index=True, width='stretch')
+                tabla_segura(aprobado.loc[aprobado.subdestino.eq(sub) & aprobado.segmento.eq(seg)], hide_index=True, width='stretch')
         except (OSError, ValueError, pd.errors.ParserError) as exc:
             st.error(f'No se pudo leer la versión aprobada: {exc}')
 st.caption('Enero y febrero de 2026 no tienen observaciones telefónicas; ausencia de cobertura no equivale a cero. No sumar polígonos.')

@@ -144,7 +144,12 @@ def evaluar(directorio: Path = PROCESSED) -> dict:
         ceros = tik.loc[total.eq(0), 'fecha'].astype(str).tolist()
         reporte['ceros_tikal'] = ceros
         if ceros:
-            aviso(f'Tikal: {len(ceros)} meses con cero; confirmar cierre o ausencia de datos')
+            motivos = tik.loc[total.eq(0)].get('motivo_cero')
+            reporte['ceros_tikal_motivo'] = (dict(zip(ceros, motivos.astype(str))) if motivos is not None else {})
+            sin_clasificar = [f for f, m in reporte['ceros_tikal_motivo'].items() if m in ('', 'sin_clasificar', 'nan')]
+            if sin_clasificar or motivos is None:
+                aviso(f'Tikal: {len(sin_clasificar) or len(ceros)} meses con cero sin explicación documentada: '
+                      f'{sin_clasificar or ceros}')
         if tik.duplicated(['fecha']).any():
             error('Tikal: fecha mensual repetida')
 

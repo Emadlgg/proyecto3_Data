@@ -22,6 +22,55 @@ def datos_disponibles(df: pd.DataFrame, columnas) -> bool:
     return not df.empty and set(columnas).issubset(df.columns)
 
 
+def consumir_seleccion(estado, clave: str, valor):
+    """Procesa una selección de gráfica una sola vez.
+
+    Las selecciones de Plotly en Streamlit persisten entre ejecuciones. Si se reaplican en cada
+    rerun, una selección vieja pisa lo que la persona eligió después en otros controles.
+    Devuelve ``valor`` solo cuando es nuevo; ``None`` si no hay selección o ya se procesó.
+    ``estado`` es ``st.session_state`` (o cualquier dict).
+    """
+    if valor is None:
+        estado[clave] = None
+        return None
+    if estado.get(clave) == valor:
+        return None
+    estado[clave] = valor
+    return valor
+
+
+def completar_calendario(df: pd.DataFrame, fecha: str = 'fecha', grupos=(), freq: str = 'MS') -> pd.DataFrame:
+    """Inserta filas vacías (NaN) para los períodos sin observación.
+
+    Sirve para que las líneas se corten en los huecos en lugar de unir con una recta los puntos
+    vecinos: la ausencia de dato no es cero ni se interpola. Requiere una fila por fecha (y grupo);
+    agregue antes si hace falta. El rango se calcula por grupo, sin extrapolar fuera de lo observado.
+    """
+    if df.empty or fecha not in df.columns:
+        return df.copy()
+    d = df.copy()
+    d[fecha] = pd.to_datetime(d[fecha], errors='coerce').dt.normalize()
+    d = d.dropna(subset=[fecha])
+    grupos = list(grupos)
+    if d.duplicated([fecha] + grupos).any():
+        raise ValueError('completar_calendario: hay fechas duplicadas; agregue antes de completar')
+
+    def _completa(g):
+        idx = pd.date_range(g[fecha].min(), g[fecha].max(), freq=freq)
+        return g.set_index(fecha).reindex(idx).rename_axis(fecha).reset_index()
+
+    if not grupos:
+        return _completa(d)
+    partes = []
+    for clave, g in d.groupby(grupos, sort=True):
+        valores = clave if isinstance(clave, tuple) else (clave,)
+        g = _completa(g.drop(columns=grupos))
+        for c, v in zip(grupos, valores):
+            g[c] = v
+        partes.append(g)
+    return pd.concat(partes, ignore_index=True)[list(d.columns)]
+
+
 def serie_poligonos(df: pd.DataFrame, seleccion) -> pd.DataFrame:
     """Suma segmentos dentro de un polígono, jamás polígonos entre sí."""
     if not datos_disponibles(df, ('fecha','subdestino','visitantes')):

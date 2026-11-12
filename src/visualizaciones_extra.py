@@ -85,10 +85,14 @@ def comparacion_indices(df):
     return d
 
 
-def ocupacion_y_afluencia(ocupacion, tikal):
-    """Cruce Sep-Dic 2025 sin sumar poblaciones ni extrapolar períodos."""
+def ocupacion_y_afluencia(ocupacion, afluencia, columna='total', nombre='boletos_tikal'):
+    """Cruce Sep-Dic 2025 sin sumar poblaciones ni extrapolar períodos.
+
+    ``afluencia`` puede ser Tikal (``columna='total'``, por defecto) o un polígono de telefonía
+    (``columna='visitantes'``, una fila por mes y polígono). ``nombre`` es la columna de salida.
+    """
     a = ocupacion[['fecha','ocupacion_pct']].copy()
-    b = tikal[['fecha','total']].rename(columns={'total':'boletos_tikal'})
+    b = afluencia[['fecha',columna]].rename(columns={columna:nombre})
     d = a.merge(b, on='fecha', how='inner', validate='one_to_one')
     return d.loc[(d.fecha >= '2025-09-01') & (d.fecha <= '2025-12-01')].sort_values('fecha')
 

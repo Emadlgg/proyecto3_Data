@@ -7,6 +7,7 @@ from src.ui.estilos import aplicar_estilos
 from src.ui.componentes import encabezado, aviso_metodologico, metrica_segura
 from src.ui.datos import panorama
 from src.ui.graficas import aplicar_tema
+from src.ui.analitica import completar_calendario
 
 st.set_page_config(page_title='Observatorio turístico | Petén', page_icon='📊', layout='wide',
                    initial_sidebar_state='expanded')
@@ -51,11 +52,15 @@ if {'fecha', 'subdestino', 'segmento', 'visitantes'}.issubset(mov.columns) and n
     if not d.empty:
         # Agregar segmentos dentro de cada subdestino; nunca sumar subdestinos.
         serie = d.groupby(['fecha', 'subdestino'], as_index=False)['visitantes'].sum()
+        # Meses sin cobertura (p. ej. ene–feb 2026) quedan como hueco, no como recta ni como cero.
+        serie = completar_calendario(serie, grupos=['subdestino'])
         fig = px.line(serie, x='fecha', y='visitantes', color='subdestino', markers=True,
                       labels={'fecha': 'Mes', 'visitantes': 'Movimientos estimados por telefonía',
                               'subdestino': 'Subdestino'})
+        fig.update_traces(connectgaps=False)
         st.plotly_chart(aplicar_tema(fig, 'Movilidad mensual observada por subdestino'), width='stretch')
-        st.caption('Cada línea representa su propio polígono de movilidad. No sumar líneas para obtener visitantes únicos.')
+        st.caption('Cada línea representa su propio polígono de movilidad. No sumar líneas para obtener visitantes únicos. '
+                   'Los meses sin cobertura telefónica se muestran como hueco (sin dato).')
     else:
         st.info('Selecciona al menos un subdestino.')
 else:

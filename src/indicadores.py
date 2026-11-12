@@ -62,7 +62,14 @@ def indicadores(tablas: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
     tik = tablas['tikal_mensual'].copy()
     tik['participacion_extranjeros'] = tik['extranjeros'].div(tik['total'].where(tik['total'] > 0))
     tik['cero_por_confirmar'] = tik['total'].eq(0)
-    tik['variacion_interanual_pct'] = tik.sort_values('fecha')['total'].pct_change(12, fill_method=None).mul(100).replace([float('inf'), -float('inf')], float('nan'))
+    # Un total 0 es "sin dato" (cierre COVID-19 o sin registro), no una medición de cero visitas;
+    # tampoco se usa como base un mes de registro parcial. Así no aparecen -100 % ni +2,000 % espurios.
+    parcial = (tik['registro_parcial'].fillna(False).astype(bool) if 'registro_parcial' in tik
+               else pd.Series(False, index=tik.index))
+    tik['total_valido'] = tik['total'].where(tik['total'].gt(0) & ~parcial)
+    tik['variacion_interanual_pct'] = (tik.sort_values('fecha')['total_valido']
+                                       .pct_change(12, fill_method=None).mul(100)
+                                       .replace([float('inf'), -float('inf')], float('nan')))
 
     # Pasajeros: mantener flujo y tipo separados; jamás equiparar con turistas.
     air = tablas['aimm_pasajeros_mensual'].copy()

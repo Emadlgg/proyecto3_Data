@@ -5,7 +5,7 @@ import plotly.express as px
 import streamlit as st
 
 from src.ui.estilos import aplicar_estilos
-from src.ui.componentes import encabezado
+from src.ui.componentes import encabezado, tabla_segura
 from src.ui.graficas import aplicar_tema
 from src.ui.analitica import (
     cargar, datos_disponibles, filtrar_encuesta,
@@ -100,7 +100,7 @@ def mostrar_perfil(indicador: str, clave: str):
         st.caption("La gráfica presenta las 15 categorías más frecuentes; la tabla conserva todas.")
     st.caption("Base: respuestas válidas de la pregunta en los grupos seleccionados. No se promedian porcentajes.")
     with st.expander("Ver tabla del indicador"):
-        st.dataframe(resumen, width="stretch", hide_index=True)
+        tabla_segura(resumen, width="stretch", hide_index=True)
 
 
 tab_perfil, tab_experiencia, tab_cobertura = st.tabs(
@@ -170,7 +170,7 @@ with tab_cobertura:
             mask = (tabla["pregunta"].astype(str).str.contains(q, case=False, regex=False, na=False)
                     | tabla["columna"].astype(str).str.contains(q, case=False, regex=False, na=False))
             tabla = tabla.loc[mask]
-        st.dataframe(tabla, hide_index=True, width="stretch")
+        tabla_segura(tabla, hide_index=True, width="stretch")
     else:
         st.info("No se encontró el archivo de cobertura de la encuesta.")
     st.markdown("#### Consideraciones metodológicas")

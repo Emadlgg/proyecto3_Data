@@ -13,4 +13,6 @@ def aplicar_estilos() -> None:
     [data-testid="stMetricLabel"] {{font-weight: 600; color: {TEXTO};}}
     [data-testid="stSidebar"] {{border-right: 1px solid {NEUTRO_CLARO};}}
     .small-note {{font-size: .88rem; color: {NEUTRO};}}
+    /* Sin botón de descarga CSV en tablas: la guía prohíbe descargas masivas de datos. */
+    [data-testid="stElementToolbar"] {{display: none !important;}}
     </style>''', unsafe_allow_html=True)
